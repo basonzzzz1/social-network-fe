@@ -418,8 +418,19 @@ background-color: white;
 }
 #status-select{
   height: 22px;
-  background-color: #38B6FF;
-  color: white;
+  background-color: #eeeeee;
+  color: black;
   border-radius: 5px;
   border: hidden;
+  font-size: 12px;
+}
+#status-name{
+  position: absolute;
+  transform: translateX(-470px) translateY(5px);
+  font-size: 11px;
+  border: 1px solid #b7b7b7;
+  border-radius: 3px;
+  width: 45px;
+  background-color: #eeeeee;
+  color: black;
 }

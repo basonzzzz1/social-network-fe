@@ -1,65 +1,65 @@
-    import React, {useEffect, useState} from 'react';
-    import {Link} from "react-router-dom";
-    import Service from "../services/Service";
-    import moment from 'moment';
-    import SockJS from 'sockjs-client';
-    import Stomp from 'stompjs';
+import React, {useEffect, useState} from 'react';
+import {Link} from "react-router-dom";
+import Service from "../services/Service";
+import moment from 'moment';
+import SockJS from 'sockjs-client';
+import Stomp from 'stompjs';
 
-    const Body = () => {
-        // const cors = require('cors');
-        // const express = require('express');
-        // let app = express();
-        // app.use(cors());
-        // app.options('*', cors());
-        const [menu, setMenu] = useState(false);
-        const [posts, setPosts] = useState([]);
-        const [status, setStatus] = useState([]);
-        const [postFull, setPostFull] = useState([]);
-        const [like, setLike] = useState([]);
-        const [account, setAccount] = useState([]);
-        const [load, setLoad] = useState(true);
-        const [selectedImage, setSelectedImage] = useState(null);
-        const [postContent, setPostContent] = useState("");
-        const socket = new SockJS('http://localhost:8080/ws');
-        const stompClient = Stomp.over(socket);
-        stompClient.connect({}, (frame) => {
-            alert('Connected to WebSocket');
-            // Lắng nghe tin nhắn từ máy chủ
-            stompClient.subscribe('/topic/like', (message) => {
-                console.log('Received like message:', message.body);
-                setLoad(true)
-                alert("lắng nghe")
-                Service.findAllLike().then((response) => {
-                    setLike(response)
-                }).catch((error) => {
-                    // alert("lỗi !")
-                })
-                // Xử lý tin nhắn like ở đây
-                // Ví dụ: cập nhật trạng thái like trong danh sách bài viết
-                // Cần có một cơ chế để xác định bài viết được like và người dùng thực hiện like
-            });
-            stompClient.subscribe('/topic/deleteLike', (message) => {
-                console.log('Received deleteLike message:', message.body);
-                alert("lắng nghe")
-                Service.findAllPost().then((response) => {
-                    const sortedPosts = response.sort((a, b) => {
-                        return new Date(b.time) - new Date(a.time);
-                    });
-                    setPosts(sortedPosts)
-                    console.log(response)
-                    setLoad(true)
-                }).catch((error) => {
-
-                })
-                Service.findAllLike().then((response) => {
-                    setLike(response)
-                }).catch((error) => {
-                    // alert("lỗi !")
-                })
-                // Xử lý tin nhắn deleteLike ở đây
-                // Ví dụ: cập nhật trạng thái deleteLike trong danh sách bài viết
-            });
+const Body = () => {
+    // const cors = require('cors');
+    // const express = require('express');
+    // let app = express();
+    // app.use(cors());
+    // app.options('*', cors());
+    const [menu, setMenu] = useState(false);
+    const [posts, setPosts] = useState([]);
+    const [status, setStatus] = useState([]);
+    const [postFull, setPostFull] = useState([]);
+    const [like, setLike] = useState([]);
+    const [account, setAccount] = useState([]);
+    const [load, setLoad] = useState(true);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [postContent, setPostContent] = useState("");
+    const socket = new SockJS('http://localhost:8080/ws');
+    const stompClient = Stomp.over(socket);
+    stompClient.connect({}, (frame) => {
+        alert('Connected to WebSocket');
+        // Lắng nghe tin nhắn từ máy chủ
+        stompClient.subscribe('/topic/like', (message) => {
+            console.log('Received like message:', message.body);
+            setLoad(true)
+            alert("lắng nghe")
+            Service.findAllLike().then((response) => {
+                setLike(response)
+            }).catch((error) => {
+                // alert("lỗi !")
+            })
+            // Xử lý tin nhắn like ở đây
+            // Ví dụ: cập nhật trạng thái like trong danh sách bài viết
+            // Cần có một cơ chế để xác định bài viết được like và người dùng thực hiện like
         });
+        stompClient.subscribe('/topic/deleteLike', (message) => {
+            console.log('Received deleteLike message:', message.body);
+            alert("lắng nghe")
+            Service.findAllPost().then((response) => {
+                const sortedPosts = response.sort((a, b) => {
+                    return new Date(b.time) - new Date(a.time);
+                });
+                setPosts(sortedPosts)
+                console.log(response)
+                setLoad(true)
+            }).catch((error) => {
+
+            })
+            Service.findAllLike().then((response) => {
+                setLike(response)
+            }).catch((error) => {
+                // alert("lỗi !")
+            })
+            // Xử lý tin nhắn deleteLike ở đây
+            // Ví dụ: cập nhật trạng thái deleteLike trong danh sách bài viết
+        });
+    });
 // Sau khi thực hiện các hoạt động liên quan đến like, bạn có thể gửi tin nhắn WebSocket để thông báo về sự kiện like hoặc deleteLike.
 // Dưới đây là một ví dụ gửi tin nhắn like:
 //         const likePost1 = (postId) => {
@@ -70,179 +70,178 @@
 //         const deleteLike = (likeId) => {
 //             stompClient.send('/app/deleteLike', {}, JSON.stringify({ likeId }));
 //         };
-        useEffect(() => {
-            Service.findAllPost().then((response) => {
-                const filteredPosts = response.filter((post) => post.status.name == "public");
-                const sortedPosts = filteredPosts.sort((a, b) => {
-                    return new Date(b.time) - new Date(a.time);
-                });
-                setPosts(sortedPosts)
-                console.log(response)
-                setLoad(false)
-            }).catch((error) => {
-                console.log(error)
-            })
-        }, [load]);
-        useEffect(() => {
-            Service.getAllStatus().then((response) =>{
-                console.log(response);
-                setStatus(response.data)
-            }).catch((error) =>{
+    useEffect(() => {
+        Service.findAllPost().then((response) => {
+            const filteredPosts = response.filter((post) => post.status.name == "public" || post.loggedInUser.id == localStorage.getItem("idAccount"));
+            const sortedPosts = filteredPosts.sort((a, b) => {
+                return new Date(b.time) - new Date(a.time);
+            });
+            setPosts(sortedPosts);
+            console.log(response);
+            setLoad(false);
+        }).catch((error) => {
+            console.log(error);
+        })
+    }, [load]);
+    useEffect(() => {
+        Service.getAllStatus().then((response) => {
+            console.log(response);
+            setStatus(response.data);
+        }).catch((error) => {
 
-            })
-        }, []);
-        useEffect(() => {
-            Service.findAllLike().then((response) => {
-                setLike(response)
-                setLoad(false)
-            }).catch((error) => {
-                // alert("lỗi !")
-            })
-        }, [load]);
-        useEffect(() => {
-            let newPostFull = {};
-            let arrPost = [];
-            for (let i = 0; i < posts.length; i++) {
-                let countLike = 0;
-                for (let j = 0; j < like.length; j++) {
-                    if (posts[i].id == like[j].post.id){
-                        countLike++
-                    }
+        })
+    }, []);
+    useEffect(() => {
+        Service.findAllLike().then((response) => {
+            setLike(response)
+            setLoad(false)
+        }).catch((error) => {
+            // alert("lỗi !")
+        })
+    }, [load]);
+    useEffect(() => {
+        let newPostFull = {};
+        let arrPost = [];
+        for (let i = 0; i < posts.length; i++) {
+            let countLike = 0;
+            for (let j = 0; j < like.length; j++) {
+                if (posts[i].id == like[j].post.id) {
+                    countLike++
                 }
-                newPostFull = {
-                    id: posts[i].id,
-                    loggedInUser: posts[i].loggedInUser,
-                    content: posts[i].content,
-                    time: posts[i].time,
-                    image: posts[i].image,
-                    countLike : countLike
-                }
-                arrPost.push(newPostFull);
             }
-              setPostFull(arrPost)
-        }, [posts]);
-        useEffect(() => {
-            if (postContent != "") {
-                document.getElementById("create-post").style.backgroundColor = "#38B6FF";
-            } else {
-                document.getElementById("create-post").style.backgroundColor = "#beb1b1";
+            newPostFull = {
+                status: posts[i].status,
+                id: posts[i].id,
+                loggedInUser: posts[i].loggedInUser,
+                content: posts[i].content,
+                time: posts[i].time,
+                image: posts[i].image,
+                countLike: countLike
             }
-        }, [postContent]);
-        const logout = () => {
-            localStorage.removeItem("idAccount");
-            localStorage.removeItem("token");
+            arrPost.push(newPostFull);
         }
-        const createPost = () => {
-            let file = document.getElementById("file1").files[0];
-            let data = new FormData();
-            let content = document.getElementById("post-content").value;
-            let status = {
-                id: document.getElementById("status-select").value,
-            }
-            data.append("content", content);
-            data.append("file", file);
-
-            if (postContent !== "") {
-                Service.createPost(data).then((response) => {
-                    alert("thành công !");
-                    document.getElementById("post-content").value = "";
-                    setSelectedImage(null)
-                    document.getElementById("selectedImage").style.display = 'none';
-                    setLoad(true);
-                }).catch((error) => {
-                    alert("thất cmn bại !")
-                })
-            } else {
-            }
+        setPostFull(arrPost)
+    }, [posts]);
+    useEffect(() => {
+        if (postContent != "") {
+            document.getElementById("create-post").style.backgroundColor = "#38B6FF";
+        } else {
+            document.getElementById("create-post").style.backgroundColor = "#beb1b1";
         }
-        const handlePostContentChange = (e) => {
-            setPostContent(e.target.value);
-        }
-        const handleFileChange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    setSelectedImage(reader.result);
-                    setPostContent(e.target.value);
-                    document.getElementById("selectedImage").style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                setSelectedImage(null);
+    }, [postContent]);
+    const logout = () => {
+        localStorage.removeItem("idAccount");
+        localStorage.removeItem("token");
+    }
+    const createPost = () => {
+        let file = document.getElementById("file1").files[0];
+        let data = new FormData();
+        let content = document.getElementById("post-content").value;
+        let statusId = document.getElementById("status-select").value;
+        data.append("content", content);
+        data.append("file", file);
+        data.append("statusId", statusId);
+        if (postContent !== "") {
+            Service.createPost(data).then((response) => {
+                alert("thành công !");
+                document.getElementById("post-content").value = "";
+                setSelectedImage(null)
                 document.getElementById("selectedImage").style.display = 'none';
-            }
-        };
-        const menuPost = (id) => {
-            if(menu == true){
-                document.getElementById(`menu${id}`).style.display = 'none';
-                setMenu(false)
-            }else {
-                setMenu(true);
-                document.getElementById(`menu${id}`).style.display = 'block';
-            }
-        }
-        const isMenu = (id) => {
-            let count = 0;
-            document.getElementById(`menu${id}`).style.display = 'block';
-        }
-        const remoteFile = () => {
-            setSelectedImage(null);
-            setPostContent("");
-            setLoad(true);
-            document.getElementById("selectedImage").style.display = 'none';
-            document.getElementById("file1").value = "";
-        }
-        useEffect(() => {
-            Service.profile().then((response) => {
-                setAccount(response.data)
                 setLoad(true);
             }).catch((error) => {
-
+                alert("thất cmn bại !")
             })
-        }, []);
-        const deletePost = (id) => {
-            Service.deletePost(id)
+        } else {
+        }
+    }
+    const handlePostContentChange = (e) => {
+        setPostContent(e.target.value);
+    }
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                setSelectedImage(reader.result);
+                setPostContent(e.target.value);
+                document.getElementById("selectedImage").style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setSelectedImage(null);
+            document.getElementById("selectedImage").style.display = 'none';
+        }
+    };
+    const menuPost = (id) => {
+        if (menu == true) {
+            document.getElementById(`menu${id}`).style.display = 'none';
+            setMenu(false)
+        } else {
+            setMenu(true);
+            document.getElementById(`menu${id}`).style.display = 'block';
+        }
+    }
+    const isMenu = (id) => {
+        let count = 0;
+        document.getElementById(`menu${id}`).style.display = 'block';
+    }
+    const remoteFile = () => {
+        setSelectedImage(null);
+        setPostContent("");
+        setLoad(true);
+        document.getElementById("selectedImage").style.display = 'none';
+        document.getElementById("file1").value = "";
+    }
+    useEffect(() => {
+        Service.profile().then((response) => {
+            setAccount(response.data)
+            setLoad(true);
+        }).catch((error) => {
+
+        })
+    }, []);
+    const deletePost = (id) => {
+        Service.deletePost(id)
+            .then((response) => {
+                setLoad(true);
+            })
+            .catch((error) => {
+                console.error('Lỗi khi xóa post:', error);
+                alert("lỗi xóa post");
+            });
+    }
+
+    const likePost = (post) => {
+        const isLiked = like.some((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
+        if (isLiked) {
+            const likedPost = like.find((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
+            let likeId = likedPost.id;
+            Service.deleteLike(likedPost.id)
                 .then((response) => {
+                    stompClient.send('/app/deleteLike', {}, JSON.stringify({likeId}));
                     setLoad(true);
                 })
                 .catch((error) => {
-                    console.error('Lỗi khi xóa post:', error);
-                    alert("lỗi xóa post");
+                    console.error('Lỗi khi xóa like:', error);
+                    alert("Lỗi khi xóa like:");
+                });
+        } else {
+            const newLike = {
+                account: account,
+                post: post,
+            };
+            Service.likePost(newLike)
+                .then(() => {
+                    stompClient.send('/app/like', {}, JSON.stringify({newLike}));
+                    setLoad(true);
+                })
+                .catch((error) => {
+                    console.error('Lỗi khi "like":', error);
+                    alert('Lỗi khi like !');
                 });
         }
-
-        const likePost = (post) => {
-            const isLiked = like.some((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
-            if (isLiked) {
-                const likedPost = like.find((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
-                let likeId = likedPost.id;
-                Service.deleteLike(likedPost.id)
-                    .then((response) => {
-                        stompClient.send('/app/deleteLike', {}, JSON.stringify({likeId}));
-                        setLoad(true);
-                    })
-                    .catch((error) => {
-                        console.error('Lỗi khi xóa like:', error);
-                        alert("Lỗi khi xóa like:");
-                    });
-            } else {
-                const newLike = {
-                    account: account,
-                    post: post,
-                };
-                Service.likePost(newLike)
-                    .then(() => {
-                        stompClient.send('/app/like', {}, JSON.stringify({ newLike }));
-                        setLoad(true);
-                    })
-                    .catch((error) => {
-                        console.error('Lỗi khi "like":', error);
-                        alert('Lỗi khi like !');
-                    });
-            }
-        };
-        return (
+    };
+    return (
         <div>
             <section>
                 <div className="gap gray-bg">
@@ -389,7 +388,7 @@
                                                     <form>
                                                         <select id="status-select">
                                                             {status.map((item) => (
-                                                                <option key={item.id} value={item.name}>
+                                                                <option key={item.id} value={item.id}>
                                                                     {item.name}
                                                                 </option>
                                                             ))}
@@ -402,9 +401,14 @@
                                                                  id="selectedImage" style={{display: 'none'}}/>
                                                             {selectedImage && (
                                                                 <span className="remove-image" onClick={remoteFile}>
-                                                                    <svg id="bi-x-square" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-square" viewBox="0 0 16 16">
-                                                                        <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
-                                                                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                                                                    <svg id="bi-x-square"
+                                                                         xmlns="http://www.w3.org/2000/svg" width="16"
+                                                                         height="16" fill="currentColor"
+                                                                         className="bi bi-x-square" viewBox="0 0 16 16">
+                                                                        <path
+                                                                            d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                                                                        <path
+                                                                            d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
                                                                     </svg>
                                                                 </span>
                                                             )}
@@ -458,18 +462,34 @@
                                                                      id="img-logged" alt=""/>
                                                             </figure>
                                                             <div className="friend-name">
-                                                                <ins><a href="time-line.html"
-                                                                        title="">{p.loggedInUser.firstName} {p.loggedInUser.lastName}</a>
+                                                                <ins>
+                                                                    <a href="time-line.html"
+                                                                       title="">{p.loggedInUser.firstName} {p.loggedInUser.lastName}</a>
                                                                 </ins>
+                                                                <span id="status-name">
+                                                                     {p.status.name === "public" ? (
+                                                                         <i className="fa fa-globe"></i>
+                                                                     ) : p.status.name === "friend" ? (
+                                                                         <i className="fa fa-user"></i>
+                                                                     ) : p.status.name === "private" ? (
+                                                                         <i className="fa fa-lock"></i>
+                                                                     ) : null}
+                                                                </span>
                                                                 <span>{moment(p.time).format('MMMM Do YYYY, h:mm:ss a')}</span>
                                                             </div>
                                                             <div className="top-are">
                                                                 <div>
-                                                                    <button onClick={()=> menuPost(p.id)} className="menu-button-post"><span><i className="fa fa-list"></i></span></button>
-                                                                    <div id={"menu"+p.id} style={{display: 'none'}} className="menu-div-post">
+                                                                    <button onClick={() => menuPost(p.id)}
+                                                                            className="menu-button-post"><span><i
+                                                                        className="fa fa-list"></i></span></button>
+                                                                    <div id={"menu" + p.id} style={{display: 'none'}}
+                                                                         className="menu-div-post">
                                                                         <div className="menu-post">
                                                                             <div className="menu-post-li">
-                                                                                <button className="button-menu-1" onClick={() => deletePost(p.id)}><i className="fa fa-trash"></i> delete </button>
+                                                                                <button className="button-menu-1"
+                                                                                        onClick={() => deletePost(p.id)}>
+                                                                                    <i className="fa fa-trash"></i> delete
+                                                                                </button>
                                                                             </div>
                                                                             <div className="menu-post-li">
                                                                                 {/*<Link to={"/editProfile"}><i className="ti-pencil-alt"></i>edit profile</Link>*/}
@@ -507,7 +527,8 @@
                                                                         <li>
                                                                             <span onClick={() => likePost(p)}>
                                                                                              {like.some((likedPost) => likedPost.post.id == p.id && account.id == likedPost.account.id) ? (
-                                                                                                 <i className="ti-heart" id="likeok"></i>
+                                                                                                 <i className="ti-heart"
+                                                                                                    id="likeok"></i>
                                                                                              ) : (
                                                                                                  <i className="ti-heart"></i>
                                                                                              )}
