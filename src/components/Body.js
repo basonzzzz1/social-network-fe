@@ -251,7 +251,7 @@ const Body = () => {
     return (
         <div>
             <section>
-                <div className="gap gray-bg">
+                <div className="gap gray-bg" id="gray-bg">
                     <div className="container-fluid">
                         <div className="row">
                             <div className="col-lg-12">
