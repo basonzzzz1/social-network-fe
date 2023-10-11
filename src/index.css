@@ -343,7 +343,7 @@ code {
   border-radius: 50%;
   padding: 4px;
   margin: 4px;
-  transform: translateX(-72px) translateY(122px);
+  transform: translateX(-20px) translateY(220px);
   
 }
 #likeok{
@@ -398,7 +398,8 @@ code {
 .menu-button-post{
   border: hidden;
   background-color: white;
-  transform: translateX(580px) translateY(-35px);
+  color: #000000;
+  transform: translateX(620px) translateY(-35px);
   position: absolute;
 }
 .menu-div-post{
@@ -408,29 +409,145 @@ code {
   width: 150px;
   display: block;
   position: absolute;
+  border: 1px solid #b2b2b2;
   background-color: white;
-  border: 1px solid #e1dfdf;
+  border: hidden;
   border-radius: 5px;
 }
+/*.menu-post > :hover {*/
+/*  box-shadow: 0 8px 8px #bbb9b9;*/
+/*  border-color: transparent;*/
+/*  !*border-radius: 20px;*!*/
+/*}*/
 .button-menu-1{
 background-color: white;
   border: hidden;
 }
+
+#status-name{
+  position: absolute;
+  transform: translateX(-390px) translateY(26px);
+  font-size: 13px;
+  border: hidden;
+  width: 20px;
+  text-align: center;
+  height: 20px;
+  border-radius: 2px;
+  background-color: white;
+  color: grey;
+}
+#account-post-avatar{
+  width: 45px;
+  height: 45px;
+  transform: translateX(20px) translateY(30px);
+  border: 3px solid grey;
+}
+
+#post-content{
+  height: 50px;
+  border: hidden;
+  border-radius: 15px;
+}
+.attachments{
+  border: hidden;
+}
+#central-post{
+  padding: 2px;
+}
+#post-content-1{
+  width: 100%;
+  height: 50px;
+  text-align: left;
+  background-color: white;
+  color: #b4b4b4;
+  border: 1px solid #bdbcbc;
+  border-radius: 15px;
+}
+.modal-title {
+  margin-left: 150px;
+}
+/*.modal {*/
+/*  background-color: rgba(255, 255, 255, 0.23); !* Một lớp mờ phía sau modal *!*/
+/*}*/
+.modal-content{
+  border-radius: 10px;
+}
+#post-post{
+  width: 100%;
+  height: 35px;
+  border: hidden;
+  background-color: #38B6FF;
+  color: white;
+  border-radius: 5px;
+}
+#change-file-img{
+  border: 1px solid #bebebe;
+  border-radius: 5px;
+  width: 92%;
+  margin-left: 20px;
+}
+/*.fa-image{*/
+/*  margin-right: 30px;*/
+/*}*/
+.fileContainer1 {
+  color: #d8d8d8;
+  font-size: 11px;
+  margin: 0 0 0 5px;
+  position: relative;
+  text-transform: capitalize;
+}
+.fileContainer1 [type=file] {
+  cursor: pointer;
+  display: block;
+  filter: alpha(opacity=0);
+  opacity: 0;
+  position: absolute;
+  right: 0px;
+  text-align: right;
+  top: 0;
+  width: 100%;
+  overflow: hidden;
+}
+.edit-phto .fileContainer1 [type="file"] {
+  height: 35px;
+  top: -11px;
+  width: 126px;
+}
+.attachments .fileContainer1 [type="file"] {
+  right: 6px;
+  top: -18px;
+  width: 20px;
+}
+#modal-avatar{
+  margin-top: 10px;
+  margin-bottom: -20px;
+  display: flex;
+  width: 100%;
+  /*padding: 0px;*/
+}
+#account-post-avatar-2{
+  width: 45px;
+  height: 45px;
+  margin-left: 20px;
+  /*transform: translateX(20px) translateY(30px);*/
+  border: 3px solid grey;
+  border-radius: 50%;
+}
+#h5-modal{
+  /*transform: translateX(25px) translateY(25px);*/
+  margin-left: 10px;
+  position: absolute;
+  color: black;
+}
+#modal-avatar-fill{
+  display: block;
+}
 #status-select{
+  transform: translateX(10px) translateY(25px);
   height: 22px;
   background-color: #eeeeee;
   color: black;
   border-radius: 5px;
   border: hidden;
   font-size: 12px;
-}
-#status-name{
-  position: absolute;
-  transform: translateX(-470px) translateY(5px);
-  font-size: 11px;
-  border: 1px solid #b7b7b7;
-  border-radius: 3px;
-  width: 45px;
-  background-color: #eeeeee;
-  color: black;
 }

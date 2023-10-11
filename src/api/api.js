@@ -11,4 +11,5 @@ export const POST_DELETE_API = `http://localhost:8080/apiPost/delete/`;
 export const LIKE_API = `http://localhost:8080/apiLike`;
 // method post
 export const LIKE_DELETE_API = `http://localhost:8080/apiLike/`;
+export const POST_FOLLOW_API = `http://localhost:8080/apiPost/getPostFollow/`;
 // Thêm các đường dẫn API khác ở đây

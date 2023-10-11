@@ -4,7 +4,7 @@ import {
     LIKE_API,
     LIKE_DELETE_API,
     LOGIN_API,
-    POST_API, POST_DELETE_API, POST_STATUS_API,
+    POST_API, POST_DELETE_API, POST_FOLLOW_API, POST_STATUS_API,
     REGISTER_API,
     USER_EDIT_PROFILE_API,
     USER_PROFILE_API
@@ -149,7 +149,22 @@ const Service = {
 
     findAllPost: () => {
         return new Promise((resolve, reject) => {
-            axios.get(POST_API, {
+            axios.get(POST_FOLLOW_API+localStorage.getItem("idAccount"),{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+    findAllPostByFollow: () => {
+        return new Promise((resolve, reject) => {
+            axios.get(POST_FOLLOW_API+localStorage.getItem("idAccount"), {
                 headers: {
                     "Authorization": "Bearer " + localStorage.getItem('token'),
                 }

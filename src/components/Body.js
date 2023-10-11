@@ -72,7 +72,7 @@ const Body = () => {
 //         };
     useEffect(() => {
         Service.findAllPost().then((response) => {
-            const filteredPosts = response.filter((post) => post.status.name == "public" || post.loggedInUser.id == localStorage.getItem("idAccount"));
+            const filteredPosts = response.filter((post) => post.status.name == "public" || post.status.name == "friend"|| post.loggedInUser.id == localStorage.getItem("idAccount"));
             const sortedPosts = filteredPosts.sort((a, b) => {
                 return new Date(b.time) - new Date(a.time);
             });
@@ -379,40 +379,45 @@ const Body = () => {
                                     </div>
                                     {/*// <!-- sidebar -->*/}
                                     <div className="col-lg-6" id="body-scroll">
-                                        <div className="central-meta">
+                                        <div className="central-meta" id="central-post">
                                             <div className="new-postbox">
                                                 <figure>
-                                                    <img src="images/resources/admin2.jpg" alt=""/>
+                                                    <img id="account-post-avatar" src={`images/profile/` + account.avatar} alt=""/>
                                                 </figure>
                                                 <div className="newpst-input">
                                                     <form>
-                                                        <select id="status-select">
-                                                            {status.map((item) => (
-                                                                <option key={item.id} value={item.id}>
-                                                                    {item.name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                        <textarea rows="2" placeholder="write something"
-                                                                  id="post-content"
-                                                                  onChange={handlePostContentChange}></textarea>
-                                                        <div className="post-meta">
-                                                            <img src={selectedImage} alt="Selected Image"
-                                                                 id="selectedImage" style={{display: 'none'}}/>
-                                                            {selectedImage && (
-                                                                <span className="remove-image" onClick={remoteFile}>
-                                                                    <svg id="bi-x-square"
-                                                                         xmlns="http://www.w3.org/2000/svg" width="16"
-                                                                         height="16" fill="currentColor"
-                                                                         className="bi bi-x-square" viewBox="0 0 16 16">
-                                                                        <path
-                                                                            d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
-                                                                        <path
-                                                                            d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-                                                                    </svg>
-                                                                </span>
-                                                            )}
-                                                        </div>
+                                                        {/*<select id="status-select">*/}
+                                                        {/*    {status.map((item) => (*/}
+                                                        {/*        <option key={item.id} value={item.id}>*/}
+                                                        {/*            {item.name}*/}
+                                                        {/*        </option>*/}
+                                                        {/*    ))}*/}
+                                                        {/*</select>*/}
+                                                        {/*<textarea rows="2" placeholder="write something"*/}
+                                                        {/*          id="post-content"*/}
+                                                        {/*          onChange={handlePostContentChange}>*/}
+                                                        {/*</textarea>*/}
+                                                        <button type="button"  id="post-content-1" data-toggle="modal" data-target="#modalPost">
+                                                            write something ...
+                                                        </button>
+                                                        {/*tạo nút button mở modal ở đây */}
+                                                        {/*<div className="post-meta">*/}
+                                                        {/*    <img src={selectedImage} alt="Selected Image"*/}
+                                                        {/*         id="selectedImage" style={{display: 'none'}}/>*/}
+                                                        {/*    {selectedImage && (*/}
+                                                        {/*        <span className="remove-image" onClick={remoteFile}>*/}
+                                                        {/*            <svg id="bi-x-square"*/}
+                                                        {/*                 xmlns="http://www.w3.org/2000/svg" width="16"*/}
+                                                        {/*                 height="16" fill="currentColor"*/}
+                                                        {/*                 className="bi bi-x-square" viewBox="0 0 16 16">*/}
+                                                        {/*                <path*/}
+                                                        {/*                    d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>*/}
+                                                        {/*                <path*/}
+                                                        {/*                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>*/}
+                                                        {/*            </svg>*/}
+                                                        {/*        </span>*/}
+                                                        {/*    )}*/}
+                                                        {/*</div>*/}
                                                         <div className="attachments">
                                                             <ul>
                                                                 <li>
@@ -466,6 +471,7 @@ const Body = () => {
                                                                     <a href="time-line.html"
                                                                        title="">{p.loggedInUser.firstName} {p.loggedInUser.lastName}</a>
                                                                 </ins>
+                                                                <span>{moment(p.time).format('MMMM Do YYYY, h:mm:ss a')}</span>
                                                                 <span id="status-name">
                                                                      {p.status.name === "public" ? (
                                                                          <i className="fa fa-globe"></i>
@@ -475,27 +481,25 @@ const Body = () => {
                                                                          <i className="fa fa-lock"></i>
                                                                      ) : null}
                                                                 </span>
-                                                                <span>{moment(p.time).format('MMMM Do YYYY, h:mm:ss a')}</span>
                                                             </div>
                                                             <div className="top-are">
                                                                 <div>
                                                                     <button onClick={() => menuPost(p.id)}
                                                                             className="menu-button-post"><span><i
-                                                                        className="fa fa-list"></i></span></button>
-                                                                    <div id={"menu" + p.id} style={{display: 'none'}}
-                                                                         className="menu-div-post">
+                                                                        className="fa fa-ellipsis-v"></i></span></button>
+                                                                    <div id={"menu" + p.id} style={{display: 'none'}} className="menu-div-post">
                                                                         <div className="menu-post">
                                                                             <div className="menu-post-li">
-                                                                                <button className="button-menu-1"
-                                                                                        onClick={() => deletePost(p.id)}>
+                                                                                {p.loggedInUser.id == account.id ?  <button className="button-menu-1" onClick={() => deletePost(p.id)}>
                                                                                     <i className="fa fa-trash"></i> delete
-                                                                                </button>
+                                                                                </button> : null}
                                                                             </div>
                                                                             <div className="menu-post-li">
-                                                                                {/*<Link to={"/editProfile"}><i className="ti-pencil-alt"></i>edit profile</Link>*/}
+                                                                                {/*<button className="button-menu-1"><i className="ti-pencil-alt"></i>personal page</button>*/}
+                                                                                <Link to={"/profile"}><i className="ti-pencil-alt"></i>personal page</Link>
                                                                             </div>
                                                                             <div className="menu-post-li">
-                                                                                {/*<a href="#" title=""><i className="ti-target"></i>activity log</a>*/}
+                                                                                <a href="#" title=""><i className="ti-target"></i>activity log</a>
                                                                             </div>
                                                                             <div className="menu-post-li">
                                                                                 {/*<a href="#" title=""><i className="ti-settings"></i>account setting</a>*/}
@@ -1776,6 +1780,73 @@ const Body = () => {
                     </div>
                 </div>
             </section>
+            <div className="modal" id="modalPost">
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                                <h4 className="modal-title">create articles</h4>
+                            <button type="button" className="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div id="modal-avatar">
+                            <div>
+                                <figure>
+                                <img id="account-post-avatar-2" src={`images/profile/` + account.avatar} alt=""/>
+                                </figure>
+                            </div>
+                            <div id="modal-avatar-fill">
+                                <div>
+                                    <h5 id="h5-modal">{account.firstName} {account.lastName}</h5>
+                                </div>
+                                <div>
+                                    <select id="status-select">
+                                        {status.map((item) => (
+                                            <option key={item.id} value={item.id}>
+                                                {item.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="modal-body">
+                             <textarea rows="2" placeholder="write something ... ?"
+                                       id="post-content"
+                                       onChange={handlePostContentChange}>
+                            </textarea><br/>
+                        </div>
+                          <div>
+                              <div className="post-meta">
+                              <img src={selectedImage} alt="Selected Image"
+                                   id="selectedImage" style={{display: 'none'}}/>
+                              {selectedImage && (
+                                  <span className="remove-image" onClick={remoteFile}>
+                                      <svg id="bi-x-square" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-square" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                                  </span>
+                              )}
+                              </div>
+                              <div className="attachments" id="change-file-img">
+                                  <ul>
+                                      <li>
+                                          <h6>
+                                              add to your article
+                                          </h6>
+                                      </li>
+                                      <li>
+                                          <i className="fa fa-image"></i>
+                                          <label className="fileContainer">
+                                              <input type="file" onChange={handleFileChange}/>
+                                          </label>
+                                      </li>
+                                  </ul>
+                              </div>
+                          </div>
+                        <div className="modal-footer">
+                            <button type="button" id="post-post">Post</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
