@@ -17,6 +17,10 @@ const Header = () => {
         const toggleUserSetting = () => {
             setUserSettingActive((prevState) => !prevState);
         };
+    const logout = () => {
+        localStorage.removeItem("idAccount");
+        localStorage.removeItem("token");
+    }
     if (localStorage.getItem("idAccount") == null) {
         return(
             <>
@@ -435,7 +439,7 @@ const Header = () => {
                                 <Link to={"/editProfile"}><i className="ti-pencil-alt"></i>edit profile</Link>
                                 <a href="#" title=""><i className="ti-target"></i>activity log</a>
                                 <a href="#" title=""><i className="ti-settings"></i>account setting</a>
-                                <a href="#" title=""><i className="ti-power-off"></i>log out</a>
+                                <Link to={"/login"} onClick={() => logout()}><i className="ti-power-off"></i>log out</Link>
                             </div>
                         </div>
                     </div>

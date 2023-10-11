@@ -124,9 +124,11 @@ const Body = () => {
     }, [posts]);
     useEffect(() => {
         if (postContent != "") {
-            document.getElementById("create-post").style.backgroundColor = "#38B6FF";
+            document.getElementById("post-post").style.backgroundColor = "#38B6FF";
+            document.getElementById("post-post").style.color = "#fcfcfc";
         } else {
-            document.getElementById("create-post").style.backgroundColor = "#beb1b1";
+            document.getElementById("post-post").style.backgroundColor = "#d2d7e1";
+            document.getElementById("post-post").style.color = "#888888";
         }
     }, [postContent]);
     const logout = () => {
@@ -145,9 +147,14 @@ const Body = () => {
             Service.createPost(data).then((response) => {
                 alert("thành công !");
                 document.getElementById("post-content").value = "";
+                setPostContent("");
                 setSelectedImage(null)
                 document.getElementById("selectedImage").style.display = 'none';
                 setLoad(true);
+                const closeModalButton = document.getElementById("closeModalButton");
+                if (closeModalButton) {
+                    closeModalButton.click();
+                }
             }).catch((error) => {
                 alert("thất cmn bại !")
             })
@@ -398,7 +405,7 @@ const Body = () => {
                                                         {/*          onChange={handlePostContentChange}>*/}
                                                         {/*</textarea>*/}
                                                         <button type="button"  id="post-content-1" data-toggle="modal" data-target="#modalPost">
-                                                            write something ...
+                                                            Write something ...?
                                                         </button>
                                                         {/*tạo nút button mở modal ở đây */}
                                                         {/*<div className="post-meta">*/}
@@ -419,42 +426,43 @@ const Body = () => {
                                                         {/*    )}*/}
                                                         {/*</div>*/}
                                                         <div className="attachments">
-                                                            <ul>
-                                                                <li>
-                                                                    <i className="fa fa-music"></i>
+                                                            <div id="navbar-post">
+                                                                <div>
+                                                                    <i className="fa fa-music" id="post-icon-music"></i>
                                                                     <label className="fileContainer">
                                                                         <input type="file"/>
                                                                     </label>
-                                                                </li>
-                                                                <li>
-                                                                    <i className="fa fa-image"></i>
-                                                                    <label className="fileContainer">
-                                                                        <input type="file" id="file1"
-                                                                               onChange={handleFileChange}/>
-                                                                    </label>
-                                                                </li>
-                                                                <li>
-                                                                    <i className="fa fa-video-camera"></i>
+                                                                    Music
+                                                                </div>
+                                                                <div>
+                                                                    <i className="fa fa-video-camera" id="post-icon-video"></i>
                                                                     <label className="fileContainer">
                                                                         <input type="file"/>
                                                                     </label>
-                                                                </li>
-                                                                <li>
-                                                                    <i className="fa fa-camera"></i>
+                                                                    Live Stream
+                                                                </div>
+                                                                <div>
+                                                                    <i className="fa fa-camera" id="post-icon-camera"></i>
                                                                     <label className="fileContainer">
                                                                         <input type="file"/>
                                                                     </label>
-                                                                </li>
-                                                                <li>
-                                                                    <button id="create-post" type="button"
-                                                                            onClick={() => createPost()}>Post
-                                                                    </button>
-                                                                </li>
-                                                            </ul>
+                                                                    Camera
+                                                                </div>
+                                                                <div>
+                                                                    <i className="fa fa-image" id="post-icon-img"></i>
+                                                                    <label className="fileContainer">
+                                                                        <input type="file" id="file1"/>
+                                                                    </label>
+                                                                    Photo
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </form>
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div>
+
                                         </div>
                                         {/*// <!-- add post new box -->*/}
                                         <div className="loadMore">
@@ -512,6 +520,9 @@ const Body = () => {
                                                                 </div>
                                                             </div>
                                                             <div className="post-meta">
+                                                                    <p id="post-content">
+                                                                        {p.content}
+                                                                    </p>
                                                                 <img src={`images/profile/` + p.image} alt=""/>
                                                                 <div className="we-video-info">
                                                                     <ul>
@@ -597,103 +608,101 @@ const Body = () => {
                                                                         </li>
                                                                     </ul>
                                                                 </div>
-                                                                <div className="description">
-
-                                                                    <p>
-                                                                        {p.content}
-                                                                    </p>
-                                                                </div>
                                                             </div>
                                                         </div>
                                                         <div className="coment-area">
                                                             <ul className="we-comet">
-                                                                <li>
-                                                                    <div className="comet-avatar">
-                                                                        <img src="images/resources/comet-1.jpg" alt=""/>
-                                                                    </div>
-                                                                    <div className="we-comment">
-                                                                        <div className="coment-head">
-                                                                            <h5><a href="time-line.html" title="">Jason
-                                                                                borne</a></h5>
-                                                                            <span>1 year ago</span>
-                                                                            <a className="we-reply" href="#"
-                                                                               title="Reply"><i
-                                                                                className="fa fa-reply"></i></a>
-                                                                        </div>
-                                                                        <p>we are working for the dance and sing songs.
-                                                                            this car is very awesome for the youngster.
-                                                                            please vote this car and like our post</p>
-                                                                    </div>
-                                                                    <ul>
+                                                                <div className="scroll-comment">
+                                                                    <ul className="we-comet">
                                                                         <li>
                                                                             <div className="comet-avatar">
-                                                                                <img src="images/resources/comet-2.jpg"
-                                                                                     alt=""/>
+                                                                                <img src="images/resources/comet-1.jpg" alt=""/>
                                                                             </div>
                                                                             <div className="we-comment">
                                                                                 <div className="coment-head">
-                                                                                    <h5><a href="time-line.html"
-                                                                                           title="">alexendra dadrio</a>
-                                                                                    </h5>
-                                                                                    <span>1 month ago</span>
+                                                                                    <h5><a href="time-line.html" title="">Jason
+                                                                                        borne</a></h5>
+                                                                                    <span>1 year ago</span>
                                                                                     <a className="we-reply" href="#"
                                                                                        title="Reply"><i
                                                                                         className="fa fa-reply"></i></a>
                                                                                 </div>
-                                                                                <p>yes, really very awesome car i see
-                                                                                    the features of this car in the
-                                                                                    official website of <a href="#"
-                                                                                                           title="">#Mercedes-Benz</a> and
-                                                                                    really impressed :-)</p>
+                                                                                <p>we are working for the dance and sing songs.
+                                                                                    this car is very awesome for the youngster.
+                                                                                    please vote this car and like our post</p>
                                                                             </div>
+                                                                            <ul>
+                                                                                <li>
+                                                                                    <div className="comet-avatar">
+                                                                                        <img src="images/resources/comet-2.jpg"
+                                                                                             alt=""/>
+                                                                                    </div>
+                                                                                    <div className="we-comment">
+                                                                                        <div className="coment-head">
+                                                                                            <h5><a href="time-line.html"
+                                                                                                   title="">alexendra dadrio</a>
+                                                                                            </h5>
+                                                                                            <span>1 month ago</span>
+                                                                                            <a className="we-reply" href="#"
+                                                                                               title="Reply"><i
+                                                                                                className="fa fa-reply"></i></a>
+                                                                                        </div>
+                                                                                        <p>yes, really very awesome car i see
+                                                                                            the features of this car in the
+                                                                                            official website of <a href="#"
+                                                                                                                   title="">#Mercedes-Benz</a> and
+                                                                                            really impressed :-)</p>
+                                                                                    </div>
+                                                                                </li>
+                                                                                <li>
+                                                                                    <div className="comet-avatar">
+                                                                                        <img src="images/resources/comet-3.jpg"
+                                                                                             alt=""/>
+                                                                                    </div>
+                                                                                    <div className="we-comment">
+                                                                                        <div className="coment-head">
+                                                                                            <h5><a href="time-line.html"
+                                                                                                   title="">Olivia</a></h5>
+                                                                                            <span>16 days ago</span>
+                                                                                            <a className="we-reply" href="#"
+                                                                                               title="Reply"><i
+                                                                                                className="fa fa-reply"></i></a>
+                                                                                        </div>
+                                                                                        <p>i like lexus cars, lexus cars are
+                                                                                            most beautiful with the awesome
+                                                                                            features, but this car is really
+                                                                                            outstanding than lexus</p>
+                                                                                    </div>
+                                                                                </li>
+                                                                            </ul>
                                                                         </li>
                                                                         <li>
                                                                             <div className="comet-avatar">
-                                                                                <img src="images/resources/comet-3.jpg"
-                                                                                     alt=""/>
+                                                                                <img src="images/resources/comet-1.jpg" alt=""/>
                                                                             </div>
                                                                             <div className="we-comment">
                                                                                 <div className="coment-head">
-                                                                                    <h5><a href="time-line.html"
-                                                                                           title="">Olivia</a></h5>
-                                                                                    <span>16 days ago</span>
+                                                                                    <h5><a href="time-line.html" title="">Donald
+                                                                                        Trump</a></h5>
+                                                                                    <span>1 week ago</span>
                                                                                     <a className="we-reply" href="#"
                                                                                        title="Reply"><i
                                                                                         className="fa fa-reply"></i></a>
                                                                                 </div>
-                                                                                <p>i like lexus cars, lexus cars are
-                                                                                    most beautiful with the awesome
-                                                                                    features, but this car is really
-                                                                                    outstanding than lexus</p>
+                                                                                <p>we are working for the dance and sing songs.
+                                                                                    this video is very awesome for the
+                                                                                    youngster. please vote this video and like
+                                                                                    our channel
+                                                                                    <i className="em em-smiley"></i>
+                                                                                </p>
                                                                             </div>
+                                                                        </li>
+                                                                        <li>
+                                                                            <a href="#" title="" className="showmore underline">more
+                                                                                comments</a>
                                                                         </li>
                                                                     </ul>
-                                                                </li>
-                                                                <li>
-                                                                    <div className="comet-avatar">
-                                                                        <img src="images/resources/comet-1.jpg" alt=""/>
-                                                                    </div>
-                                                                    <div className="we-comment">
-                                                                        <div className="coment-head">
-                                                                            <h5><a href="time-line.html" title="">Donald
-                                                                                Trump</a></h5>
-                                                                            <span>1 week ago</span>
-                                                                            <a className="we-reply" href="#"
-                                                                               title="Reply"><i
-                                                                                className="fa fa-reply"></i></a>
-                                                                        </div>
-                                                                        <p>we are working for the dance and sing songs.
-                                                                            this video is very awesome for the
-                                                                            youngster. please vote this video and like
-                                                                            our channel
-                                                                            <i className="em em-smiley"></i>
-                                                                        </p>
-                                                                    </div>
-                                                                </li>
-                                                                <li>
-                                                                    <a href="#" title="" className="showmore underline">more
-                                                                        comments</a>
-                                                                </li>
+                                                                </div>
                                                                 <li className="post-comment">
                                                                     <div className="comet-avatar">
                                                                         <img src="images/resources/comet-1.jpg" alt=""/>
@@ -1784,8 +1793,8 @@ const Body = () => {
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="modal-header">
-                                <h4 className="modal-title">create articles</h4>
-                            <button type="button" className="close" data-dismiss="modal">&times;</button>
+                                <h4 className="modal-title" >create articles</h4>
+                            <button type="button" className="close" data-dismiss="modal" id="closeModalButton">&times;</button>
                         </div>
                         <div id="modal-avatar">
                             <div>
@@ -1809,12 +1818,10 @@ const Body = () => {
                             </div>
                         </div>
                         <div className="modal-body">
-                             <textarea rows="2" placeholder="write something ... ?"
-                                       id="post-content"
-                                       onChange={handlePostContentChange}>
+                             <textarea rows="2" placeholder="write something ... ?" id="post-content" onChange={handlePostContentChange}>
                             </textarea><br/>
                         </div>
-                          <div>
+                          <div id="seclect-img-display">
                               <div className="post-meta">
                               <img src={selectedImage} alt="Selected Image"
                                    id="selectedImage" style={{display: 'none'}}/>
@@ -1824,6 +1831,7 @@ const Body = () => {
                                   </span>
                               )}
                               </div>
+
                               <div className="attachments" id="change-file-img">
                                   <ul>
                                       <li>
@@ -1832,18 +1840,29 @@ const Body = () => {
                                           </h6>
                                       </li>
                                       <li>
-                                          <i className="fa fa-image"></i>
+                                          <i className="fa fa-image" id="icon-post-img"></i>
                                           <label className="fileContainer">
-                                              <input type="file" onChange={handleFileChange}/>
+                                              <input type="file" id="file1" onChange={handleFileChange}/>
+                                          </label>
+                                      </li>
+                                      <li>
+                                          <i className="fa fa-video-camera" id="icon-post-video"></i>
+                                          <label className="fileContainer">
+                                              <input type="file"/>
+                                          </label>
+                                      </li>
+                                      <li>
+                                          <i className="fa fa-camera" id="icon-post-camera"></i>
+                                          <label className="fileContainer">
+                                              <input type="file"/>
                                           </label>
                                       </li>
                                   </ul>
                               </div>
                           </div>
                         <div className="modal-footer">
-                            <button type="button" id="post-post">Post</button>
+                            <button type="button" id="post-post"  onClick={() => createPost()}>Post</button>
                         </div>
-
                     </div>
                 </div>
             </div>
