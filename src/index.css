@@ -447,6 +447,15 @@ background-color: white;
 }
 
 #post-content{
+  color: black;
+  margin-bottom:-10px;
+  height: 50px;
+  border: hidden;
+  border-radius: 15px;
+}
+#create-post-content{
+  color: black;
+  margin-bottom:-10px;
   height: 50px;
   border: hidden;
   border-radius: 15px;
@@ -486,10 +495,11 @@ background-color: white;
   border-radius: 5px;
 }
 #change-file-img{
-  border: 1px solid #bebebe;
+  /*border: 0px solid #bebebe;*/
   border-radius: 5px;
   width: 92%;
   margin-left: 20px;
+  -webkit-box-shadow: 0 0 10px #b7b7b7;
 }
 /*.fa-image{*/
 /*  margin-right: 30px;*/
@@ -586,12 +596,14 @@ background-color: white;
 .scroll-comment::-webkit-scrollbar {
   display: none;
 }
-#post-content{
+#post-content-2{
   color: black;
-  margin-bottom:-10px;
 }
 .description{
   /*padding: -20px;*/
+}
+#change-file-img ul li h6{
+  margin-right: 200px;
 }
 #navbar-post{
   display: flex;

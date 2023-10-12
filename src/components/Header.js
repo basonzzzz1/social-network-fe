@@ -17,9 +17,11 @@ const Header = () => {
         const toggleUserSetting = () => {
             setUserSettingActive((prevState) => !prevState);
         };
+        console.log(account);
     const logout = () => {
         localStorage.removeItem("idAccount");
         localStorage.removeItem("token");
+        localStorage.removeItem("account");
     }
     if (localStorage.getItem("idAccount") == null) {
         return(

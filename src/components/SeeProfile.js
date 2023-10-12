@@ -1,21 +1,20 @@
 import React, {useEffect, useState} from 'react';
 import Service from "../services/Service";
-import {Link} from "react-router-dom";
+import {Link, useParams} from "react-router-dom";
+import Header from "./Header";
 import moment from "moment/moment";
 import SockJS from "sockjs-client";
 import Stomp from "stompjs";
 
-const Profile = () => {
+const SeeProfile = () => {
     const [account, setAccount] = useState({});
+    const [accountMain, setAccountMain] = useState({});
     const [load, setLoad] = useState(true);
     const [posts, setPosts] = useState([]);
     const [postFull, setPostFull] = useState([]);
     const [like, setLike] = useState([]);
     const [menu, setMenu] = useState(false);
-    const [status, setStatus] = useState([]);
-    const [postContent, setPostContent] = useState("");
-    const [selectedImage, setSelectedImage] = useState(null);
-
+    const { id } = useParams();
     const socket = new SockJS('http://localhost:8080/ws');
     const stompClient = Stomp.over(socket);
     stompClient.connect({}, (frame) => {
@@ -56,41 +55,41 @@ const Profile = () => {
             // Ví dụ: cập nhật trạng thái deleteLike trong danh sách bài viết
         });
     });
+
     useEffect(() => {
-        Service.profile().then((response)=>{
+        Service.seeProfile(id).then((response)=>{
             setAccount(response.data)
-            console.log(response.data)
-        }).catch((error)=>{
             setLoad(false)
+        }).catch((error)=>{
+            console.log(error)
         })
     }, [load]);
     useEffect(() => {
-        Service.findAllPost().then((response) => {
-            const filteredPosts = response.filter((post) => post.loggedInUser.id == localStorage.getItem("idAccount"));
+        Service.profile().then((response)=>{
+            setAccountMain(response.data)
+            setLoad(false)
+        }).catch((error)=>{
+            console.log(error)
+        })
+    }, [load]);
+    useEffect(() => {
+        Service.postByUser(id).then((response)=>{
+            const filteredPosts = response.filter((post) => post.status.name == "public" || post.status.name == "friend"|| post.loggedInUser.id == localStorage.getItem("idAccount"));
             const sortedPosts = filteredPosts.sort((a, b) => {
                 return new Date(b.time) - new Date(a.time);
             });
             setPosts(sortedPosts);
-            console.log(response);
-            setLoad(false);
-        }).catch((error) => {
-            console.log(error);
+            setLoad(false)
+        }).catch((error)=>{
+            console.log(error)
         })
     }, [load]);
-    useEffect(() => {
-        Service.getAllStatus().then((response) => {
-            console.log(response);
-            setStatus(response.data);
-        }).catch((error) => {
-
-        })
-    }, []);
     useEffect(() => {
         Service.findAllLike().then((response) => {
             setLike(response)
             setLoad(false)
         }).catch((error) => {
-            // alert("lỗi !")
+            alert("lỗi !")
         })
     }, [load]);
     useEffect(() => {
@@ -116,55 +115,6 @@ const Profile = () => {
         }
         setPostFull(arrPost)
     }, [posts]);
-    const createPost = () => {
-        let file = document.getElementById("file1").files[0];
-        let data = new FormData();
-        let content = document.getElementById("post-content").value;
-        let statusId = document.getElementById("status-select").value;
-        data.append("content", content);
-        data.append("file", file);
-        data.append("statusId", statusId);
-        if (postContent !== "") {
-            Service.createPost(data).then((response) => {
-                alert("thành công !");
-                document.getElementById("post-content").value = "";
-                setPostContent("");
-                setSelectedImage(null)
-                document.getElementById("selectedImage").style.display = 'none';
-                setLoad(true);
-                const closeModalButton = document.getElementById("closeModalButton");
-                if (closeModalButton) {
-                    closeModalButton.click();
-                }
-                remoteFile()
-            }).catch((error) => {
-                alert("thất cmn bại !")
-            })
-        } else {
-        }
-    }
-    const remoteFile = () => {
-        setSelectedImage(null);
-        setPostContent("");
-        setLoad(true);
-        document.getElementById("selectedImage").style.display = 'none';
-        document.getElementById("file1").value = "";
-    }
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                setSelectedImage(reader.result);
-                setPostContent(e.target.value);
-                document.getElementById("selectedImage").style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setSelectedImage(null);
-            document.getElementById("selectedImage").style.display = 'none';
-        }
-    };
     const menuPost = (id) => {
         if (menu == true) {
             document.getElementById(`menu${id}`).style.display = 'none';
@@ -173,7 +123,7 @@ const Profile = () => {
             setMenu(true);
             document.getElementById(`menu${id}`).style.display = 'block';
         }
-    }
+    };
     const deletePost = (id) => {
         Service.deletePost(id)
             .then((response) => {
@@ -184,13 +134,10 @@ const Profile = () => {
                 alert("lỗi xóa post");
             });
     }
-    const handlePostContentChange = (e) => {
-        setPostContent(e.target.value);
-    }
     const likePost = (post) => {
-        const isLiked = like.some((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
+        const isLiked = like.some((likedPost) => likedPost.post.id === post.id && accountMain.id === likedPost.account.id);
         if (isLiked) {
-            const likedPost = like.find((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
+            const likedPost = like.find((likedPost) => likedPost.post.id === post.id && accountMain.id === likedPost.account.id);
             let likeId = likedPost.id;
             Service.deleteLike(likedPost.id)
                 .then((response) => {
@@ -203,7 +150,7 @@ const Profile = () => {
                 });
         } else {
             const newLike = {
-                account: account,
+                account: accountMain,
                 post: post,
             };
             Service.likePost(newLike)
@@ -220,8 +167,8 @@ const Profile = () => {
     const logout = () => {
         localStorage.removeItem("idAccount");
         localStorage.removeItem("token");
+        localStorage.removeItem("account")
     }
-
     return (
         <div>
             <section>
@@ -406,52 +353,6 @@ const Profile = () => {
                                     </div>
                                     {/*// <!-- sidebar -->*/}
                                     <div className="col-lg-6" id="profile-scroll">
-                                        <div className="central-meta" id="central-post">
-                                            <div className="new-postbox">
-                                                <figure>
-                                                    <img id="account-post-avatar" src={`images/profile/` + account.avatar} alt=""/>
-                                                </figure>
-                                                <div className="newpst-input">
-                                                    <form>
-                                                        <button type="button"  id="post-content-1" data-toggle="modal" data-target="#modalPost">
-                                                            Write something ...?
-                                                        </button>
-                                                        <div className="attachments">
-                                                            <div id="navbar-post">
-                                                                <div>
-                                                                    <i className="fa fa-music" id="post-icon-music"></i>
-                                                                    <label className="fileContainer">
-                                                                        <input type="file"/>
-                                                                    </label>
-                                                                    Music
-                                                                </div>
-                                                                <div>
-                                                                    <i className="fa fa-video-camera" id="post-icon-video"></i>
-                                                                    <label className="fileContainer">
-                                                                        <input type="file"/>
-                                                                    </label>
-                                                                    Live Stream
-                                                                </div>
-                                                                <div>
-                                                                    <i className="fa fa-camera" id="post-icon-camera"></i>
-                                                                    <label className="fileContainer">
-                                                                        <input type="file"/>
-                                                                    </label>
-                                                                    Camera
-                                                                </div>
-                                                                <div>
-                                                                    <i className="fa fa-image" id="post-icon-img"></i>
-                                                                    <label className="fileContainer">
-                                                                        {/*<input type="file" id="file1"/>*/}
-                                                                    </label>
-                                                                    Photo
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
                                         {/*// <!-- add post new box -->*/}
                                         <div className="loadMore">
                                             {postFull.map((p) => (
@@ -529,7 +430,7 @@ const Profile = () => {
                                                                         </li>
                                                                         <li>
                                                                             <span onClick={() => likePost(p)}>
-                                                                                             {like.some((likedPost) => likedPost.post.id == p.id && account.id == likedPost.account.id) ? (
+                                                                                             {like.some((likedPost) => likedPost.post.id == p.id && accountMain.id == likedPost.account.id) ? (
                                                                                                  <i className="ti-heart"
                                                                                                     id="likeok"></i>
                                                                                              ) : (
@@ -960,162 +861,7 @@ const Profile = () => {
                     </div>
                 </div>
             </section>
-            <div className="modal" id="modalPost">
-                <div className="modal-dialog">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h4 className="modal-title" >create articles</h4>
-                            <button type="button" className="close" data-dismiss="modal" id="closeModalButton">&times;</button>
-                        </div>
-                        <div id="modal-avatar">
-                            <div>
-                                <figure>
-                                    <img id="account-post-avatar-2" src={`images/profile/` + account.avatar} alt=""/>
-                                </figure>
-                            </div>
-                            <div id="modal-avatar-fill">
-                                <div>
-                                    <h5 id="h5-modal">{account.firstName} {account.lastName}</h5>
-                                </div>
-                                <div>
-                                    <select id="status-select">
-                                        {status.map((item) => (
-                                            <option key={item.id} value={item.id}>
-                                                {item.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="modal-body">
-                             <textarea rows="2" placeholder="write something ... ?" id="post-content" onChange={handlePostContentChange}>
-                            </textarea><br/>
-                        </div>
-                        <div id="seclect-img-display">
-                            <div className="post-meta">
-                                <img src={selectedImage} alt="Selected Image"
-                                     id="selectedImage" style={{display: 'none'}}/>
-                                {selectedImage && (
-                                    <span className="remove-image" onClick={remoteFile}>
-                                      <svg id="bi-x-square" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-square" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                                  </span>
-                                )}
-                            </div>
-
-                            <div className="attachments" id="change-file-img">
-                                <ul>
-                                    <li>
-                                        <h6>
-                                            Add to your article  !
-                                        </h6>
-                                    </li>
-                                    <li>
-                                        <i className="fa fa-image" id="icon-post-img"></i>
-                                        <label className="fileContainer">
-                                            <input type="file" id="file1" onChange={handleFileChange}/>
-                                        </label>
-                                    </li>
-                                    <li>
-                                        <i className="fa fa-video-camera" id="icon-post-video"></i>
-                                        <label className="fileContainer">
-                                            <input type="file"/>
-                                        </label>
-                                    </li>
-                                    <li>
-                                        <i className="fa fa-camera" id="icon-post-camera"></i>
-                                        <label className="fileContainer">
-                                            <input type="file"/>
-                                        </label>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div className="modal-footer">
-                            <button type="button" id="post-post"  onClick={() => createPost()}>Post</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div className="modal" id="modalCreatePost">
-                <div className="modal-dialog">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h4 className="modal-title" >create articles</h4>
-                            <button type="button" className="close" data-dismiss="modal" id="closeModalButton">&times;</button>
-                        </div>
-                        <div id="modal-avatar">
-                            <div>
-                                <figure>
-                                    <img id="account-post-avatar-2" src={`images/profile/` + account.avatar} alt=""/>
-                                </figure>
-                            </div>
-                            <div id="modal-avatar-fill">
-                                <div>
-                                    <h5 id="h5-modal">{account.firstName} {account.lastName}</h5>
-                                </div>
-                                <div>
-                                    <select id="status-select">
-                                        {status.map((item) => (
-                                            <option key={item.id} value={item.id}>
-                                                {item.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="modal-body">
-                             <textarea rows="2" placeholder="write something ... ?" id="create-post-content" onChange={handlePostContentChange}>
-                            </textarea><br/>
-                        </div>
-                        <div id="seclect-img-display">
-                            <div className="post-meta">
-                                <img src={selectedImage} alt="Selected Image"
-                                     id="selectedImage" style={{display: 'none'}}/>
-                                {selectedImage && (
-                                    <span className="remove-image" onClick={remoteFile}>
-                                      <svg id="bi-x-square" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-square" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                                  </span>
-                                )}
-                            </div>
-
-                            <div className="attachments" id="change-file-img">
-                                <ul>
-                                    <li>
-                                        <h6>
-                                            Add to your article  !
-                                        </h6>
-                                    </li>
-                                    <li>
-                                        <i className="fa fa-image" id="icon-post-img"></i>
-                                        <label className="fileContainer">
-                                            <input type="file" id="file2" onChange={handleFileChange}/>
-                                        </label>
-                                    </li>
-                                    <li>
-                                        <i className="fa fa-video-camera" id="icon-post-video"></i>
-                                        <label className="fileContainer">
-                                            <input type="file"/>
-                                        </label>
-                                    </li>
-                                    <li>
-                                        <i className="fa fa-camera" id="icon-post-camera"></i>
-                                        <label className="fileContainer">
-                                            <input type="file"/>
-                                        </label>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div className="modal-footer">
-                            <button type="button" id="post-post"  onClick={() => createPost()}>Post</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 };
-
-export default Profile;
+export default SeeProfile;

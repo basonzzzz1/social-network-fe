@@ -4,7 +4,7 @@ import {
     LIKE_API,
     LIKE_DELETE_API,
     LOGIN_API,
-    POST_API, POST_DELETE_API, POST_FOLLOW_API, POST_STATUS_API,
+    POST_API, POST_DELETE_API, POST_FOLLOW_API, POST_STATUS_API, POST_USE_API,
     REGISTER_API,
     USER_EDIT_PROFILE_API,
     USER_PROFILE_API
@@ -116,8 +116,40 @@ const Service = {
                 }
             })
                 .then(response => {
-                    localStorage.setItem("account",response.data)
+
                     resolve(response);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+    seeProfile: (id) => {
+        return new Promise((resolve, reject) => {
+            axios.get(USER_PROFILE_API+id, {
+                headers: {
+                    'Accept': 'application/json',
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    resolve(response);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+    postByUser: (id) => {
+        return new Promise((resolve, reject) => {
+            axios.get(POST_USE_API+id, {
+                headers: {
+                    'Accept': 'application/json',
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    resolve(response.data);
                 })
                 .catch(function (err) {
                     reject(err)
@@ -150,21 +182,6 @@ const Service = {
     findAllPost: () => {
         return new Promise((resolve, reject) => {
             axios.get(POST_FOLLOW_API+localStorage.getItem("idAccount"),{
-                headers: {
-                    "Authorization": "Bearer " + localStorage.getItem('token'),
-                }
-            })
-                .then(response => {
-                    resolve(response.data);
-                })
-                .catch(function (err) {
-                    reject(err)
-                });
-        });
-    },
-    findAllPostByFollow: () => {
-        return new Promise((resolve, reject) => {
-            axios.get(POST_FOLLOW_API+localStorage.getItem("idAccount"), {
                 headers: {
                     "Authorization": "Bearer " + localStorage.getItem('token'),
                 }
@@ -244,7 +261,7 @@ const Service = {
     isTheUserLoggedIn: () => {
         const token = localStorage.getItem('token')
         if (token != null && token != undefined) {
-                        return true;
+            return true;
         }
         return false;
     },

@@ -17,6 +17,14 @@ const Login = () => {
           alert("tài khoản mật khẩu không chính xác !")
       })
     }
+    useEffect(() => {
+        Service.profile().then((response)=>{
+            setAccount(response.data)
+            localStorage.setItem("account",response.data)
+            console.log(response.data)
+        }).catch((error)=>{
+        })
+    }, [isLoggedIn]);
     return (
         <div>
             <div className="theme-layout">
