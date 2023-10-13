@@ -102,6 +102,28 @@ const Service = {
                 });
         });
     },
+    updatePost: (formData,iPost) => {
+        console.log(formData);
+        return new Promise((resolve, reject) => {
+            let id = localStorage.getItem("idAccount");
+            let config = {
+                method: 'post',
+                maxBodyLength: Infinity,
+                url: POST_API+"/"+id+"/"+iPost,
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                data : formData
+            };
+            axios.request(config)
+                .then(response => {
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
     getAllStatus: async () => {
         return await axios.get(POST_STATUS_API);
     },
@@ -182,6 +204,21 @@ const Service = {
     findAllPost: () => {
         return new Promise((resolve, reject) => {
             axios.get(POST_FOLLOW_API+localStorage.getItem("idAccount"),{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+    findByPost: (id) => {
+        return new Promise((resolve, reject) => {
+            axios.get(POST_API+"/"+id,{
                 headers: {
                     "Authorization": "Bearer " + localStorage.getItem('token'),
                 }

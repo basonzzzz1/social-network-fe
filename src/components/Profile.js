@@ -13,8 +13,11 @@ const Profile = () => {
     const [like, setLike] = useState([]);
     const [menu, setMenu] = useState(false);
     const [status, setStatus] = useState([]);
+    const [post, setPost] = useState({});
     const [postContent, setPostContent] = useState("");
     const [selectedImage, setSelectedImage] = useState(null);
+    const [selectedImageUpdate, setSelectedImageUpdate] = useState(null);
+    const [imageFileName, setImageFileName] = useState("");
 
     const socket = new SockJS('http://localhost:8080/ws');
     const stompClient = Stomp.over(socket);
@@ -90,7 +93,7 @@ const Profile = () => {
             setLike(response)
             setLoad(false)
         }).catch((error) => {
-            // alert("lỗi !")
+            alert("lỗi !")
         })
     }, [load]);
     useEffect(() => {
@@ -117,6 +120,7 @@ const Profile = () => {
         setPostFull(arrPost)
     }, [posts]);
     const createPost = () => {
+        setPostContent("");
         let file = document.getElementById("file1").files[0];
         let data = new FormData();
         let content = document.getElementById("post-content").value;
@@ -126,7 +130,6 @@ const Profile = () => {
         data.append("statusId", statusId);
         if (postContent !== "") {
             Service.createPost(data).then((response) => {
-                alert("thành công !");
                 document.getElementById("post-content").value = "";
                 setPostContent("");
                 setSelectedImage(null)
@@ -138,7 +141,62 @@ const Profile = () => {
                 }
                 remoteFile()
             }).catch((error) => {
-                alert("thất cmn bại !")
+                alert("thất bại !")
+            })
+        } else {
+        }
+    }
+    const findByPost = (id) => {
+        Service.findByPost(id).then((response) => {
+            setPost(response)
+            document.getElementById("idPostModal").value = response.id;
+            document.getElementById("update-post-content").value = response.content;
+            document.getElementById("status-select-update").value = response.status.id;
+            document.getElementById("file2").value = new File([''], response.image , { type: 'image/*' });
+            // let virtualImageFile = new File([''], imageFileName, { type: 'image/*' });
+            // fileInput.files = [virtualImageFile];
+            if (response.image) {
+                setSelectedImageUpdate(`images/profile/` + response.image);
+                loadImage(response.image);
+            }
+            // document.getElementById("file2").files[0] = response.image;
+            console.log(response);
+            setLoad(true);
+        }).catch((error) => {
+            console.log(error);
+        })
+    }
+    const loadImage = (imageFileName) => {
+        const img = new Image();
+        img.src = `images/profile/` + imageFileName;
+        img.onload = () => {
+            document.getElementById("selectedImageUpdate").src = img.src;
+            document.getElementById("selectedImageUpdate").style.display = 'block';
+        };
+    }
+    const updatePost = () => {
+        let file = document.getElementById("file2").files[0];
+        let data = new FormData();
+        let idPost = document.getElementById("idPostModal").value
+        let content = document.getElementById("update-post-content").value;
+        let statusId = document.getElementById("status-select-update").value;
+        data.append("content", content);
+        data.append("file", file);
+        data.append("statusId", statusId);
+        if (postContent !== "") {
+            Service.updatePost(data,idPost).then((response) => {
+                document.getElementById("post-content").value = "";
+                setPostContent("");
+                setSelectedImageUpdate(null)
+                document.getElementById("selectedImageUpdate").style.display = 'none';
+                setLoad(true);
+                const closeModalButton = document.getElementById("closeModalButton");
+                if (closeModalButton) {
+                    closeModalButton.click();
+                }
+                remoteFile()
+            }).catch((error) => {
+                alert("thất bại !")
             })
         } else {
         }
@@ -150,6 +208,14 @@ const Profile = () => {
         document.getElementById("selectedImage").style.display = 'none';
         document.getElementById("file1").value = "";
     }
+    const remoteFileUpdate = () => {
+        setSelectedImageUpdate(null); // Sửa lỗi tại đây
+        setPostContent("");
+        setLoad(true);
+        document.getElementById("selectedImageUpdate").style.display = 'none';
+        document.getElementById("file2").value = "";
+    }
+
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -163,6 +229,22 @@ const Profile = () => {
         } else {
             setSelectedImage(null);
             document.getElementById("selectedImage").style.display = 'none';
+        }
+    };
+    const handleFileChangeUpdate = (e) => {
+        const file = e.target.files[0];
+        console.log(file);
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                setSelectedImageUpdate(reader.result);
+                setPostContent(e.target.value);
+                document.getElementById("selectedImageUpdate").style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setSelectedImageUpdate(null);
+            document.getElementById("selectedImageUpdate").style.display = 'none';
         }
     };
     const menuPost = (id) => {
@@ -189,33 +271,17 @@ const Profile = () => {
     }
     const likePost = (post) => {
         const isLiked = like.some((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
-        if (isLiked) {
-            const likedPost = like.find((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
-            let likeId = likedPost.id;
-            Service.deleteLike(likedPost.id)
-                .then((response) => {
-                    stompClient.send('/app/deleteLike', {}, JSON.stringify({likeId}));
-                    setLoad(true);
-                })
-                .catch((error) => {
-                    console.error('Lỗi khi xóa like:', error);
-                    alert("Lỗi khi xóa like:");
-                });
-        } else {
-            const newLike = {
-                account: account,
-                post: post,
-            };
-            Service.likePost(newLike)
-                .then(() => {
-                    stompClient.send('/app/like', {}, JSON.stringify({newLike}));
-                    setLoad(true);
-                })
-                .catch((error) => {
-                    console.error('Lỗi khi "like":', error);
-                    alert('Lỗi khi like !');
-                });
-        }
+        const likeId = isLiked ? like.find((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id)?.id : null;
+        const action = isLiked ? Service.deleteLike(likeId) : Service.likePost({ account, post });
+        action
+            .then(() => {
+                stompClient.send(isLiked ? '/app/deleteLike' : '/app/like', {}, JSON.stringify({ likeId }));
+                setLoad(true);
+            })
+            .catch((error) => {
+                console.error(`Lỗi khi ${isLiked ? 'xóa like' : 'like'}:`, error);
+                alert(`Lỗi khi ${isLiked ? 'xóa like' : 'like'}:`);
+            });
     };
     const logout = () => {
         localStorage.removeItem("idAccount");
@@ -413,8 +479,10 @@ const Profile = () => {
                                                 </figure>
                                                 <div className="newpst-input">
                                                     <form>
-                                                        <button type="button"  id="post-content-1" data-toggle="modal" data-target="#modalPost">
-                                                            Write something ...?
+                                                        <button type="button" className="button" style={{ verticalAlign: 'middle'}}  id="post-content-1" data-toggle="modal" data-target="#modalPost">
+                                                            <span>
+                                                                Write something
+                                                            </span>
                                                         </button>
                                                         <div className="attachments">
                                                             <div id="navbar-post">
@@ -485,13 +553,12 @@ const Profile = () => {
                                                                     <div id={"menu" + p.id} style={{display: 'none'}} className="menu-div-post">
                                                                         <div className="menu-post">
                                                                             <div className="menu-post-li">
-                                                                                {p.loggedInUser.id == account.id ?  <button className="button-menu-1" onClick={() => deletePost(p.id)}>
+                                                                                {p.loggedInUser.id === account.id ?  <button className="button-menu-1" onClick={() => deletePost(p.id)}>
                                                                                     <i className="fa fa-trash"></i> delete
                                                                                 </button> : null}
                                                                             </div>
                                                                             <div className="menu-post-li">
-                                                                                {/*<button className="button-menu-1"><i className="ti-pencil-alt"></i>personal page</button>*/}
-                                                                                <Link to={"/profile"}><i className="ti-pencil-alt"></i>personal page</Link>
+                                                                                {p.loggedInUser.id === account.id ?<button className="button-menu-1" data-toggle="modal" data-target="#modalEditePost" onClick={()=> findByPost(p.id)}><i className="ti-pencil-alt"></i> edit post</button> : null}
                                                                             </div>
                                                                             <div className="menu-post-li">
                                                                                 <a href="#" title=""><i className="ti-target"></i>activity log</a>
@@ -1002,7 +1069,6 @@ const Profile = () => {
                                   </span>
                                 )}
                             </div>
-
                             <div className="attachments" id="change-file-img">
                                 <ul>
                                     <li>
@@ -1013,7 +1079,7 @@ const Profile = () => {
                                     <li>
                                         <i className="fa fa-image" id="icon-post-img"></i>
                                         <label className="fileContainer">
-                                            <input type="file" id="file1" onChange={handleFileChange}/>
+                                            <input type="file" id="file1" accept='.png, .jpg, .jpeg' onChange={handleFileChange}/>
                                         </label>
                                     </li>
                                     <li>
@@ -1037,14 +1103,15 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
-            <div className="modal" id="modalCreatePost">
+            <div className="modal" id="modalEditePost">
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h4 className="modal-title" >create articles</h4>
+                            <h4 className="modal-title" >Edit article</h4>
                             <button type="button" className="close" data-dismiss="modal" id="closeModalButton">&times;</button>
                         </div>
                         <div id="modal-avatar">
+                            <input type="hidden" id="idPostModal" />
                             <div>
                                 <figure>
                                     <img id="account-post-avatar-2" src={`images/profile/` + account.avatar} alt=""/>
@@ -1055,7 +1122,7 @@ const Profile = () => {
                                     <h5 id="h5-modal">{account.firstName} {account.lastName}</h5>
                                 </div>
                                 <div>
-                                    <select id="status-select">
+                                    <select id="status-select-update">
                                         {status.map((item) => (
                                             <option key={item.id} value={item.id}>
                                                 {item.name}
@@ -1066,15 +1133,14 @@ const Profile = () => {
                             </div>
                         </div>
                         <div className="modal-body">
-                             <textarea rows="2" placeholder="write something ... ?" id="create-post-content" onChange={handlePostContentChange}>
+                             <textarea rows="2" placeholder="write something ... ?" id="update-post-content" onChange={handlePostContentChange}>
                             </textarea><br/>
                         </div>
                         <div id="seclect-img-display">
                             <div className="post-meta">
-                                <img src={selectedImage} alt="Selected Image"
-                                     id="selectedImage" style={{display: 'none'}}/>
-                                {selectedImage && (
-                                    <span className="remove-image" onClick={remoteFile}>
+                                <img src={selectedImageUpdate} alt="Selected Image" id="selectedImageUpdate" style={{ display: 'none' }} />
+                                {selectedImageUpdate && (
+                                    <span className="remove-image-update" onClick={remoteFileUpdate}>
                                       <svg id="bi-x-square" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-square" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
                                   </span>
                                 )}
@@ -1090,7 +1156,7 @@ const Profile = () => {
                                     <li>
                                         <i className="fa fa-image" id="icon-post-img"></i>
                                         <label className="fileContainer">
-                                            <input type="file" id="file2" onChange={handleFileChange}/>
+                                            <input type="file" id="file2" accept='.png, .jpg, .jpeg' onChange={handleFileChangeUpdate}/>
                                         </label>
                                     </li>
                                     <li>
@@ -1109,7 +1175,7 @@ const Profile = () => {
                             </div>
                         </div>
                         <div className="modal-footer">
-                            <button type="button" id="post-post"  onClick={() => createPost()}>Post</button>
+                            <button type="button" id="post-post"  onClick={() => updatePost()}>Post</button>
                         </div>
                     </div>
                 </div>

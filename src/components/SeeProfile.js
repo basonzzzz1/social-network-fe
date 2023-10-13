@@ -135,34 +135,18 @@ const SeeProfile = () => {
             });
     }
     const likePost = (post) => {
-        const isLiked = like.some((likedPost) => likedPost.post.id === post.id && accountMain.id === likedPost.account.id);
-        if (isLiked) {
-            const likedPost = like.find((likedPost) => likedPost.post.id === post.id && accountMain.id === likedPost.account.id);
-            let likeId = likedPost.id;
-            Service.deleteLike(likedPost.id)
-                .then((response) => {
-                    stompClient.send('/app/deleteLike', {}, JSON.stringify({likeId}));
-                    setLoad(true);
-                })
-                .catch((error) => {
-                    console.error('Lỗi khi xóa like:', error);
-                    alert("Lỗi khi xóa like:");
-                });
-        } else {
-            const newLike = {
-                account: accountMain,
-                post: post,
-            };
-            Service.likePost(newLike)
-                .then(() => {
-                    stompClient.send('/app/like', {}, JSON.stringify({newLike}));
-                    setLoad(true);
-                })
-                .catch((error) => {
-                    console.error('Lỗi khi "like":', error);
-                    alert('Lỗi khi like !');
-                });
-        }
+        const isLiked = like.some((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
+        const likeId = isLiked ? like.find((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id)?.id : null;
+        const action = isLiked ? Service.deleteLike(likeId) : Service.likePost({ account, post });
+        action
+            .then(() => {
+                stompClient.send(isLiked ? '/app/deleteLike' : '/app/like', {}, JSON.stringify({ likeId }));
+                setLoad(true);
+            })
+            .catch((error) => {
+                console.error(`Lỗi khi ${isLiked ? 'xóa like' : 'like'}:`, error);
+                alert(`Lỗi khi ${isLiked ? 'xóa like' : 'like'}:`);
+            });
     };
     const logout = () => {
         localStorage.removeItem("idAccount");

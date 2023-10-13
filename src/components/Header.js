@@ -220,7 +220,7 @@ const Header = () => {
                         </div>
                     </nav>
                 </div>
-                <div className="topbar stick">
+                <div className="topbar stick" id="nav-fix">
                     <div className="logo">
                         <Link to={"/home"}><img src="images/logo.png" alt=""/></Link>
                     </div>

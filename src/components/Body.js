@@ -7,6 +7,7 @@ import Stomp from 'stompjs';
 
 const Body = () => {
     const [menu, setMenu] = useState(false);
+    const [post, setPost] = useState({});
     const [posts, setPosts] = useState([]);
     const [status, setStatus] = useState([]);
     const [postFull, setPostFull] = useState([]);
@@ -15,6 +16,7 @@ const Body = () => {
     const [load, setLoad] = useState(true);
     const [selectedImage, setSelectedImage] = useState(null);
     const [postContent, setPostContent] = useState("");
+    const [selectedImageUpdate, setSelectedImageUpdate] = useState(null);
     const socket = new SockJS('http://localhost:8080/ws');
     const stompClient = Stomp.over(socket);
     stompClient.connect({}, (frame) => {
@@ -22,7 +24,6 @@ const Body = () => {
         // Lắng nghe tin nhắn từ máy chủ
         stompClient.subscribe('/topic/like', (message) => {
             console.log('Received like message:', message.body);
-            setLoad(true)
             alert("lắng nghe")
             Service.findAllLike().then((response) => {
                 setLike(response)
@@ -42,7 +43,6 @@ const Body = () => {
                 });
                 setPosts(sortedPosts)
                 console.log(response)
-                setLoad(true)
             }).catch((error) => {
 
             })
@@ -67,55 +67,42 @@ const Body = () => {
 //         };
     useEffect(() => {
         Service.findAllPost().then((response) => {
-            const filteredPosts = response.filter((post) => post.status.name == "public" || post.status.name == "friend"|| post.loggedInUser.id == localStorage.getItem("idAccount"));
-            const sortedPosts = filteredPosts.sort((a, b) => {
-                return new Date(b.time) - new Date(a.time);
-            });
+            const filteredPosts = response.filter((post) => post.status.name === "public" || post.status.name === "friend" || post.loggedInUser.id === localStorage.getItem("idAccount"));
+            const sortedPosts = filteredPosts.sort((a, b) => new Date(b.time) - new Date(a.time));
             setPosts(sortedPosts);
-            console.log(response);
             setLoad(false);
+        }).catch((error) => {
+            console.log(error);
+        });
+    }, [load]);
+    useEffect(() => {
+        Service.getAllStatus().then((response) => {
+            setStatus(response.data);
+        }).catch((error) => {
+            console.log(error)
+        })
+    }, [load]);
+    useEffect(() => {
+        Service.findAllLike().then((response) => {
+            setLike(response)
         }).catch((error) => {
             console.log(error);
         })
     }, [load]);
     useEffect(() => {
-        Service.getAllStatus().then((response) => {
-            console.log(response);
-            setStatus(response.data);
-        }).catch((error) => {
-
-        })
-    }, []);
-    useEffect(() => {
-        Service.findAllLike().then((response) => {
-            setLike(response)
-            setLoad(false)
-        }).catch((error) => {
-            // alert("lỗi !")
-        })
-    }, [load]);
-    useEffect(() => {
-        let newPostFull = {};
-        let arrPost = [];
-        for (let i = 0; i < posts.length; i++) {
-            let countLike = 0;
-            for (let j = 0; j < like.length; j++) {
-                if (posts[i].id == like[j].post.id) {
-                    countLike++
-                }
-            }
-            newPostFull = {
-                status: posts[i].status,
-                id: posts[i].id,
-                loggedInUser: posts[i].loggedInUser,
-                content: posts[i].content,
-                time: posts[i].time,
-                image: posts[i].image,
+        const updatedPosts = posts.map((post) => {
+            const countLike = like.filter((likedPost) => likedPost.post.id === post.id).length;
+            return {
+                status: post.status,
+                id: post.id,
+                loggedInUser: post.loggedInUser,
+                content: post.content,
+                time: post.time,
+                image: post.image,
                 countLike: countLike
-            }
-            arrPost.push(newPostFull);
-        }
-        setPostFull(arrPost)
+            };
+        });
+        setPostFull(updatedPosts);
     }, [posts]);
     useEffect(() => {
         if (postContent != "") {
@@ -127,9 +114,7 @@ const Body = () => {
         }
     }, [postContent]);
     const logout = () => {
-        localStorage.removeItem("idAccount");
-        localStorage.removeItem("token");
-        localStorage.removeItem("account");
+        localStorage.removeItem("idAccount");localStorage.removeItem("token");localStorage.removeItem("account");
     }
     const createPost = () => {
         let file = document.getElementById("file1").files[0];
@@ -141,7 +126,6 @@ const Body = () => {
         data.append("statusId", statusId);
         if (postContent !== "") {
             Service.createPost(data).then((response) => {
-                alert("thành công !");
                 document.getElementById("post-content").value = "";
                 setPostContent("");
                 setSelectedImage(null)
@@ -176,6 +160,22 @@ const Body = () => {
             document.getElementById("selectedImage").style.display = 'none';
         }
     };
+    const handleFileChangeUpdate = (e) => {
+        const file = e.target.files[0];
+        console.log(file);
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                setSelectedImageUpdate(reader.result);
+                setPostContent(e.target.value);
+                document.getElementById("selectedImageUpdate").style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setSelectedImageUpdate(null);
+            document.getElementById("selectedImageUpdate").style.display = 'none';
+        }
+    };
     const menuPost = (id) => {
         if (menu == true) {
             document.getElementById(`menu${id}`).style.display = 'none';
@@ -189,6 +189,68 @@ const Body = () => {
         let count = 0;
         document.getElementById(`menu${id}`).style.display = 'block';
     }
+    const findByPost = (id) => {
+        Service.findByPost(id).then((response) => {
+            setPost(response)
+            document.getElementById("idPostModal").value = response.id;
+            document.getElementById("update-post-content").value = response.content;
+            document.getElementById("status-select-update").value = response.status.id;
+            document.getElementById("file2").value = new File([''], response.image , { type: 'image/*' });
+            // let virtualImageFile = new File([''], imageFileName, { type: 'image/*' });
+            // fileInput.files = [virtualImageFile];
+            if (response.image) {
+                setSelectedImageUpdate(`images/profile/` + response.image);
+                loadImage(response.image);
+            }
+            // document.getElementById("file2").files[0] = response.image;
+            console.log(response);
+            setLoad(true);
+        }).catch((error) => {
+            console.log(error);
+        })
+    }
+    const remoteFileUpdate = () => {
+        setSelectedImageUpdate(null); // Sửa lỗi tại đây
+        setPostContent("");
+        setLoad(true);
+        document.getElementById("selectedImageUpdate").style.display = 'none';
+        document.getElementById("file2").value = "";
+    }
+    const loadImage = (imageFileName) => {
+        const img = new Image();
+        img.src = `images/profile/` + imageFileName;
+        img.onload = () => {
+            document.getElementById("selectedImageUpdate").src = img.src;
+            document.getElementById("selectedImageUpdate").style.display = 'block';
+        };
+    }
+    const updatePost = () => {
+        let file = document.getElementById("file2").files[0];
+        let data = new FormData();
+        let idPost = document.getElementById("idPostModal").value
+        let content = document.getElementById("update-post-content").value;
+        let statusId = document.getElementById("status-select-update").value;
+        data.append("content", content);
+        data.append("file", file);
+        data.append("statusId", statusId);
+        if (postContent !== "") {
+            Service.updatePost(data,idPost).then((response) => {
+                document.getElementById("post-content").value = "";
+                setPostContent("");
+                setSelectedImageUpdate(null)
+                document.getElementById("selectedImageUpdate").style.display = 'none';
+                setLoad(true);
+                const closeModalButton = document.getElementById("closeModalButton");
+                if (closeModalButton) {
+                    closeModalButton.click();
+                }
+                remoteFile()
+            }).catch((error) => {
+                alert("thất cmn bại !")
+            })
+        } else {
+        }
+    }
     const remoteFile = () => {
         setSelectedImage(null);
         setPostContent("");
@@ -199,9 +261,8 @@ const Body = () => {
     useEffect(() => {
         Service.profile().then((response) => {
             setAccount(response.data)
-            setLoad(true);
         }).catch((error) => {
-
+            console.log(error);
         })
     }, []);
     const deletePost = (id) => {
@@ -210,41 +271,25 @@ const Body = () => {
                 setLoad(true);
             })
             .catch((error) => {
-                console.error('Lỗi khi xóa post:', error);
+                console.error(error);
                 alert("lỗi xóa post");
             });
     }
-
     const likePost = (post) => {
         const isLiked = like.some((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
-        if (isLiked) {
-            const likedPost = like.find((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
-            let likeId = likedPost.id;
-            Service.deleteLike(likedPost.id)
-                .then((response) => {
-                    stompClient.send('/app/deleteLike', {}, JSON.stringify({likeId}));
-                    setLoad(true);
-                })
-                .catch((error) => {
-                    console.error('Lỗi khi xóa like:', error);
-                    alert("Lỗi khi xóa like:");
-                });
-        } else {
-            const newLike = {
-                account: account,
-                post: post,
-            };
-            Service.likePost(newLike)
-                .then(() => {
-                    stompClient.send('/app/like', {}, JSON.stringify({newLike}));
-                    setLoad(true);
-                })
-                .catch((error) => {
-                    console.error('Lỗi khi "like":', error);
-                    alert('Lỗi khi like !');
-                });
-        }
+        const likeId = isLiked ? like.find((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id)?.id : null;
+        const action = isLiked ? Service.deleteLike(likeId) : Service.likePost({ account, post });
+        action
+            .then(() => {
+                stompClient.send(isLiked ? '/app/deleteLike' : '/app/like', {}, JSON.stringify({ likeId }));
+                setLoad(true);
+            })
+            .catch((error) => {
+                console.error(`Lỗi khi ${isLiked ? 'xóa like' : 'like'}:`, error);
+                alert(`Lỗi khi ${isLiked ? 'xóa like' : 'like'}:`);
+            });
     };
+
     return (
         <div>
             <section>
@@ -390,38 +435,11 @@ const Body = () => {
                                                 </figure>
                                                 <div className="newpst-input">
                                                     <form>
-                                                        {/*<select id="status-select">*/}
-                                                        {/*    {status.map((item) => (*/}
-                                                        {/*        <option key={item.id} value={item.id}>*/}
-                                                        {/*            {item.name}*/}
-                                                        {/*        </option>*/}
-                                                        {/*    ))}*/}
-                                                        {/*</select>*/}
-                                                        {/*<textarea rows="2" placeholder="write something"*/}
-                                                        {/*          id="post-content"*/}
-                                                        {/*          onChange={handlePostContentChange}>*/}
-                                                        {/*</textarea>*/}
-                                                        <button type="button"  id="post-content-1" data-toggle="modal" data-target="#modalPost">
-                                                            Write something ...?
+                                                        <button type="button" className="button" style={{ verticalAlign: 'middle'}}  id="post-content-1" data-toggle="modal" data-target="#modalPost">
+                                                            <span>
+                                                                Write something
+                                                            </span>
                                                         </button>
-                                                        {/*tạo nút button mở modal ở đây */}
-                                                        {/*<div className="post-meta">*/}
-                                                        {/*    <img src={selectedImage} alt="Selected Image"*/}
-                                                        {/*         id="selectedImage" style={{display: 'none'}}/>*/}
-                                                        {/*    {selectedImage && (*/}
-                                                        {/*        <span className="remove-image" onClick={remoteFile}>*/}
-                                                        {/*            <svg id="bi-x-square"*/}
-                                                        {/*                 xmlns="http://www.w3.org/2000/svg" width="16"*/}
-                                                        {/*                 height="16" fill="currentColor"*/}
-                                                        {/*                 className="bi bi-x-square" viewBox="0 0 16 16">*/}
-                                                        {/*                <path*/}
-                                                        {/*                    d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>*/}
-                                                        {/*                <path*/}
-                                                        {/*                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>*/}
-                                                        {/*            </svg>*/}
-                                                        {/*        </span>*/}
-                                                        {/*    )}*/}
-                                                        {/*</div>*/}
                                                         <div className="attachments">
                                                             <div id="navbar-post">
                                                                 <div>
@@ -499,8 +517,7 @@ const Body = () => {
                                                                                 </button> : null}
                                                                             </div>
                                                                             <div className="menu-post-li">
-                                                                                {/*<button className="button-menu-1"><i className="ti-pencil-alt"></i>personal page</button>*/}
-                                                                                <Link to={"/profile"}><i className="ti-pencil-alt"></i>personal page</Link>
+                                                                                {p.loggedInUser.id === account.id ?<button className="button-menu-1" data-toggle="modal" data-target="#modalEditePost" onClick={()=> findByPost(p.id)}><i className="ti-pencil-alt"></i> edit post</button> : null}
                                                                             </div>
                                                                             <div className="menu-post-li">
                                                                                 <a href="#" title=""><i className="ti-target"></i>activity log</a>
@@ -1109,7 +1126,7 @@ const Body = () => {
                                       <li>
                                           <i className="fa fa-image" id="icon-post-img"></i>
                                           <label className="fileContainer">
-                                              <input type="file" id="file1" onChange={handleFileChange}/>
+                                              <input type="file" id="file1" accept='.png, .jpg, .jpeg' onChange={handleFileChange}/>
                                           </label>
                                       </li>
                                       <li>
@@ -1129,6 +1146,83 @@ const Body = () => {
                           </div>
                         <div className="modal-footer">
                             <button type="button" id="post-post"  onClick={() => createPost()}>Post</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="modal" id="modalEditePost">
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h4 className="modal-title" >Edit article</h4>
+                            <button type="button" className="close" data-dismiss="modal" id="closeModalButton">&times;</button>
+                        </div>
+                        <div id="modal-avatar">
+                            <input type="hidden" id="idPostModal" />
+                            <div>
+                                <figure>
+                                    <img id="account-post-avatar-2" src={`images/profile/` + account.avatar} alt=""/>
+                                </figure>
+                            </div>
+                            <div id="modal-avatar-fill">
+                                <div>
+                                    <h5 id="h5-modal">{account.firstName} {account.lastName}</h5>
+                                </div>
+                                <div>
+                                    <select id="status-select-update">
+                                        {status.map((item) => (
+                                            <option key={item.id} value={item.id}>
+                                                {item.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="modal-body">
+                             <textarea rows="2" placeholder="write something ... ?" id="update-post-content" onChange={handlePostContentChange}>
+                            </textarea><br/>
+                        </div>
+                        <div id="seclect-img-display">
+                            <div className="post-meta">
+                                <img src={selectedImageUpdate} alt="Selected Image" id="selectedImageUpdate" style={{ display: 'none' }} />
+                                {selectedImageUpdate && (
+                                    <span className="remove-image-update" onClick={remoteFileUpdate}>
+                                      <svg id="bi-x-square" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-square" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                                  </span>
+                                )}
+                            </div>
+
+                            <div className="attachments" id="change-file-img">
+                                <ul>
+                                    <li>
+                                        <h6>
+                                            Add to your article  !
+                                        </h6>
+                                    </li>
+                                    <li>
+                                        <i className="fa fa-image" id="icon-post-img"></i>
+                                        <label className="fileContainer">
+                                            <input type="file" id="file2" accept='.png, .jpg, .jpeg' onChange={handleFileChangeUpdate}/>
+                                        </label>
+                                    </li>
+                                    <li>
+                                        <i className="fa fa-video-camera" id="icon-post-video"></i>
+                                        <label className="fileContainer">
+                                            <input type="file"/>
+                                        </label>
+                                    </li>
+                                    <li>
+                                        <i className="fa fa-camera" id="icon-post-camera"></i>
+                                        <label className="fileContainer">
+                                            <input type="file"/>
+                                        </label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" id="post-post"  onClick={() => updatePost()}>Post</button>
                         </div>
                     </div>
                 </div>

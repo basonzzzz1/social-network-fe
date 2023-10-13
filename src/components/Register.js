@@ -54,6 +54,7 @@ const Register = () => {
             document.getElementById("selectedImage").style.display = 'none';
         }
     };
+    var popup = document.getElementById("popup");
 
     return (
         <div>
