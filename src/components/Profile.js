@@ -4,8 +4,18 @@ import {Link} from "react-router-dom";
 import moment from "moment/moment";
 import SockJS from "sockjs-client";
 import Stomp from "stompjs";
-
+import {useDispatch, useSelector} from "react-redux";
+import {toast} from "react-toastify";
+import PostService from "../services/PostService";
+import {getDownloadURL, ref, uploadBytes} from "firebase/storage";
+import {storage} from "../Config/firebase";
+import UserService from "../services/UserService";
+import {updateUserToken} from '../redux/actions/userActions';
+import {v4} from "uuid";
+const imageMimeType = /image\/(png|jpg|jpeg)/i;
 const Profile = () => {
+    const [file, setFile] = useState(null);
+    const [fileDataURL, setFileDataURL] = useState(null);
     const [account, setAccount] = useState({});
     const [load, setLoad] = useState(true);
     const [posts, setPosts] = useState([]);
@@ -17,7 +27,56 @@ const Profile = () => {
     const [postContent, setPostContent] = useState("");
     const [selectedImage, setSelectedImage] = useState(null);
     const [selectedImageUpdate, setSelectedImageUpdate] = useState(null);
-    const [imageFileName, setImageFileName] = useState("");
+    const [checkFindImage, setCheckFindImage] = useState(false);
+    const userToken = useSelector((state) => state.userToken);
+    const dispatch = useDispatch();
+    const editAvatar = async (event) => {
+        try {
+            if (event.target.files[0] == null) {
+                return;
+            }
+
+            const imageRef = ref(storage, `images/${event.target.files[0].name + v4()}`);
+            const snapshot = await uploadBytes(imageRef, event.target.files[0]);
+            const url = await getDownloadURL(snapshot.ref);
+
+            const user = {id: userToken.id, avatar: url};
+
+            const response = await UserService.editAvatar(user);
+
+            toast.success("Upload Successfully!");
+            toast.success("Edit Avatar Successfully!");
+
+            const updatedUser = {...userToken, ...response.data};
+            localStorage.setItem("userToken", JSON.stringify(updatedUser));
+            dispatch(updateUserToken(response.data));
+            setLoad(true);
+        } catch (error) {
+            console.error("Error:", error);
+            toast.error("Edit Avatar failed!");
+        }
+    }
+    const editThumbnail = async (event) => {
+        try {
+            if (event.target.files[0] == null) {
+                return;
+            }
+            const imageRef = ref(storage, `images/${event.target.files[0].name + v4()}`);
+            const snapshot = await uploadBytes(imageRef, event.target.files[0]);
+            const url = await getDownloadURL(snapshot.ref);
+            const user = {id: userToken.id, thumbnail: url};
+            const response = await UserService.editThumbnail(user);
+            toast.success("Upload successful!");
+            toast.success("Edit Thumbnail Successfully!");
+            const updatedUser = {...userToken, ...response.data};
+            localStorage.setItem("userToken", JSON.stringify(updatedUser));
+            dispatch(updateUserToken(response.data));
+            setLoad(true);
+        } catch (error) {
+            console.error("Error:", error);
+            toast.error("Edit Thumbnail failed!");
+        }
+    }
 
     const socket = new SockJS('http://localhost:8080/ws');
     const stompClient = Stomp.over(socket);
@@ -67,6 +126,31 @@ const Profile = () => {
             setLoad(false)
         })
     }, [load]);
+
+    useEffect(() => {
+        let fileReader, isCancel = false;
+        if (file) {
+            fileReader = new FileReader();
+            fileReader.onload = (e) => {
+                const {result} = e.target;
+                if (result && !isCancel) {
+                    setFileDataURL(result)
+                }
+            }
+            fileReader.readAsDataURL(file);
+            return () => {
+                isCancel = true;
+                if (fileReader && fileReader.readyState === 1) {
+                    fileReader.abort();
+                }
+            }
+        }else{
+            setFileDataURL(selectedImageUpdate);
+        }
+
+
+    }, [file,load]);
+
     useEffect(() => {
         Service.findAllPost().then((response) => {
             const filteredPosts = response.filter((post) => post.loggedInUser.id == localStorage.getItem("idAccount"));
@@ -96,6 +180,18 @@ const Profile = () => {
             alert("lỗi !")
         })
     }, [load]);
+
+    useEffect(() => {
+        if (postContent != "" || selectedImage != null) {
+            document.getElementById("post-post").style.backgroundColor = "#38B6FF";
+            document.getElementById("post-post").style.color = "#fcfcfc";
+        } else {
+            document.getElementById("post-post").style.backgroundColor = "#d2d7e1";
+            document.getElementById("post-post").style.color = "#888888";
+        }
+    }, [postContent,selectedImage]);
+
+
     useEffect(() => {
         let newPostFull = {};
         let arrPost = [];
@@ -119,31 +215,64 @@ const Profile = () => {
         }
         setPostFull(arrPost)
     }, [posts]);
-    const createPost = () => {
-        setPostContent("");
-        let file = document.getElementById("file1").files[0];
-        let data = new FormData();
-        let content = document.getElementById("post-content").value;
-        let statusId = document.getElementById("status-select").value;
-        data.append("content", content);
-        data.append("file", file);
-        data.append("statusId", statusId);
-        if (postContent !== "") {
-            Service.createPost(data).then((response) => {
-                document.getElementById("post-content").value = "";
+    const changeImage = (event) => {
+        const file = event.target.files[0];
+        console.log(file);
+        if (!file.type.match(imageMimeType)) {
+            toast.error("Image mime type is not valid");
+            return;
+        }
+        setSelectedImageUpdate(file);
+        setSelectedImage(file)
+        document.getElementById("selectedImage").style.display = 'block';
+        document.getElementById("selectedImageUpdate").style.display = 'block';
+        setFile(file);
+    }
+    const createPost = async () => {
+        try {
+            if (file == null) {
+                let content = document.getElementById("post-content").value;
+                let statusId = document.getElementById("status-select").value;
+                const newP = {content : content,
+                    status : {id:statusId} ,
+                    loggedInUser:{id: userToken.id}};
+                const response = await PostService.createPost(newP);
+                console.log(response.data);
+                 document.getElementById("closeModalButton").click();
+                toast.success('Create Post Successfully!');
                 setPostContent("");
-                setSelectedImage(null)
-                document.getElementById("selectedImage").style.display = 'none';
-                setLoad(true);
+                setLoad(!load);
+                return;
+            }else {
+                let content = document.getElementById("post-content").value;
+                let statusId = document.getElementById("status-select").value;
+                document.getElementById("loader").style.display = 'block';
+                const imageRef = ref(storage, `images/${file.name + v4()}`);
+                const snapshot = await uploadBytes(imageRef, file);
+                const url = await getDownloadURL(snapshot.ref);
+                document.getElementById("loader").style.display = 'none';
                 const closeModalButton = document.getElementById("closeModalButton");
+                setSelectedImage(file)
+                const newP = {content : content,
+                    status : {id:statusId},
+                    image:url,
+                    loggedInUser:{id: userToken.id}
+                };
+                const response = await PostService.createPost(newP);
+                console.log(response.data);
                 if (closeModalButton) {
                     closeModalButton.click();
                 }
-                remoteFile()
-            }).catch((error) => {
-                alert("thất bại !")
-            })
-        } else {
+                remoteFile();
+                toast.success('Create Post Successfully!');
+                setPostContent("");
+                setFile(null);
+                setFileDataURL(null);
+                setLoad(!load);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            toast.error('Error while creating the post.');
         }
     }
     const findByPost = (id) => {
@@ -152,54 +281,81 @@ const Profile = () => {
             document.getElementById("idPostModal").value = response.id;
             document.getElementById("update-post-content").value = response.content;
             document.getElementById("status-select-update").value = response.status.id;
-            document.getElementById("file2").value = new File([''], response.image , { type: 'image/*' });
-            // let virtualImageFile = new File([''], imageFileName, { type: 'image/*' });
-            // fileInput.files = [virtualImageFile];
-            if (response.image) {
-                setSelectedImageUpdate(`images/profile/` + response.image);
-                loadImage(response.image);
+            if(response.image == null || response.image == "" || response.image == undefined){
+                setCheckFindImage(false)
+            }else{
+                document.getElementById("selectedImageUpdate").style.display = 'block';
+                setSelectedImageUpdate(response.image);
+                setCheckFindImage(true)
+                setFileDataURL(response.image)
+                // document.getElementById("selectedImageUpdate").style.display = 'block';
             }
-            // document.getElementById("file2").files[0] = response.image;
             console.log(response);
             setLoad(true);
         }).catch((error) => {
             console.log(error);
         })
     }
-    const loadImage = (imageFileName) => {
-        const img = new Image();
-        img.src = `images/profile/` + imageFileName;
-        img.onload = () => {
-            document.getElementById("selectedImageUpdate").src = img.src;
-            document.getElementById("selectedImageUpdate").style.display = 'block';
-        };
-    }
-    const updatePost = () => {
-        let file = document.getElementById("file2").files[0];
-        let data = new FormData();
-        let idPost = document.getElementById("idPostModal").value
+    const updatePost = async () => {
+        let idPost = document.getElementById("idPostModal").value;
         let content = document.getElementById("update-post-content").value;
         let statusId = document.getElementById("status-select-update").value;
-        data.append("content", content);
-        data.append("file", file);
-        data.append("statusId", statusId);
-        if (postContent !== "") {
-            Service.updatePost(data,idPost).then((response) => {
-                document.getElementById("post-content").value = "";
-                setPostContent("");
-                setSelectedImageUpdate(null)
-                document.getElementById("selectedImageUpdate").style.display = 'none';
-                setLoad(true);
-                const closeModalButton = document.getElementById("closeModalButton");
-                if (closeModalButton) {
-                    closeModalButton.click();
-                }
-                remoteFile()
-            }).catch((error) => {
-                alert("thất bại !")
-            })
-        } else {
+
+        if (file != null) {
+            document.getElementById("loader").style.display = "block";
+            const imageRef = ref(storage, `images/${file.name + v4()}`);
+            const snapshot = await uploadBytes(imageRef, file);
+            const url = await getDownloadURL(snapshot.ref);
+            document.getElementById("loader").style.display = "none";
+            let post1 = {
+                id: idPost,
+                content: content,
+                status:{id: statusId},
+                image: url,
+                loggedInUser:{id:account.id}
+            };
+            Service.updatePost(post1)
+                .then((response) => {
+                    document.getElementById("post-content").value = "";
+                    document.getElementById("selectedImageUpdate").style.display = "none";
+                    document.getElementById("closeModalButtonUpdate").click();
+                    setFileDataURL(null);
+                    setFile(null)
+                    setPostContent("");
+                    setSelectedImageUpdate(null);
+                    setLoad(true);
+                    remoteFile();
+                })
+                .catch((error) => {
+                    console.error("Thất bại!", error);
+                    alert("Thất bại!");
+                });
+        }else{
+            let post1 = {
+                id: idPost,
+                content: content,
+                status:{id: statusId},
+                image: selectedImageUpdate,
+                loggedInUser:account
+            };
+            Service.updatePost(post1)
+                .then((response) => {
+                    document.getElementById("post-content").value = "";
+                    setPostContent("");
+                    setSelectedImageUpdate(null);
+                    setLoad(true);
+                    document.getElementById("selectedImageUpdate").style.display = "none";
+                    document.getElementById("closeModalButtonUpdate").click();
+                    setFileDataURL(null);
+                    setFile(null)
+                    remoteFile();
+                })
+                .catch((error) => {
+                    console.error("Thất bại!", error);
+                    alert("Thất bại!");
+                });
         }
+
     }
     const remoteFile = () => {
         setSelectedImage(null);
@@ -209,44 +365,14 @@ const Profile = () => {
         document.getElementById("file1").value = "";
     }
     const remoteFileUpdate = () => {
-        setSelectedImageUpdate(null); // Sửa lỗi tại đây
+        setSelectedImageUpdate(null);
         setPostContent("");
         setLoad(true);
-        document.getElementById("selectedImageUpdate").style.display = 'none';
+        setFileDataURL(null)
+        document.getElementById("selectedImageUpdate").style.display = "none";
+        // document.getElementById("selectedImageUpdate").style.display = 'none';
         document.getElementById("file2").value = "";
     }
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                setSelectedImage(reader.result);
-                setPostContent(e.target.value);
-                document.getElementById("selectedImage").style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setSelectedImage(null);
-            document.getElementById("selectedImage").style.display = 'none';
-        }
-    };
-    const handleFileChangeUpdate = (e) => {
-        const file = e.target.files[0];
-        console.log(file);
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                setSelectedImageUpdate(reader.result);
-                setPostContent(e.target.value);
-                document.getElementById("selectedImageUpdate").style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setSelectedImageUpdate(null);
-            document.getElementById("selectedImageUpdate").style.display = 'none';
-        }
-    };
     const menuPost = (id) => {
         if (menu == true) {
             document.getElementById(`menu${id}`).style.display = 'none';
@@ -286,13 +412,14 @@ const Profile = () => {
     const logout = () => {
         localStorage.removeItem("idAccount");
         localStorage.removeItem("token");
+        localStorage.removeItem("userToken");
     }
 
     return (
         <div>
             <section>
                 <div className="feature-photo">
-                    <figure><img src="images/resources/timeline-4.jpg" alt=""/></figure>
+                    <figure><img src={userToken.thumbnail} alt="" style={{width: 1536, height: 449.783}}/></figure>
                     <div className="add-btn">
                         <span>1.3k followers</span>
                         <a href="#" title="" data-ripple="">Add button</a>
@@ -301,7 +428,12 @@ const Profile = () => {
                         <i className="fa fa-camera-retro"></i>
                         <label className="fileContainer">
                             Edit Cover Photo
-                            <input type="file"/>
+                            <input type="file"
+                                   accept='.png, .jpg, .jpeg'
+                                   onChange={(event) => {
+                                       editThumbnail(event)
+                                   }}
+                            />
                         </label>
                     </form>
                     <div className="container-fluid">
@@ -309,12 +441,16 @@ const Profile = () => {
                             <div className="col-lg-2 col-sm-3">
                                 <div className="user-avatar">
                                     <figure>
-                                        <img src={`images/profile/`+account.avatar} alt=""/>
+                                        <img src={userToken.avatar} alt="" style={{width: 225.667, height: 220.817}}/>
                                         <form className="edit-phto">
                                             <i className="fa fa-camera-retro"></i>
                                             <label className="fileContainer">
                                                 Edit Display Photo
-                                                <input type="file"/>
+                                                <input type="file"
+                                                       accept='.png, .jpg, .jpeg'
+                                                       onChange={(event) => {
+                                                           editAvatar(event)
+                                                       }}/>
                                             </label>
                                         </form>
                                     </figure>
@@ -333,7 +469,7 @@ const Profile = () => {
                                             <a className="" href="inbox.html" title="" data-ripple="">inbox</a>
                                             <a className="" href="insights.html" title="" data-ripple="">insights</a>
                                             <a className="" href="fav-page.html" title="" data-ripple="">posts</a>
-                                            <a className="" href="page-likers.html" title="" data-ripple="">likers</a>
+                                            <Link to={"/about"} title="" data-ripple="">About</Link>
                                         </li>
                                     </ul>
                                 </div>
@@ -475,7 +611,7 @@ const Profile = () => {
                                         <div className="central-meta" id="central-post">
                                             <div className="new-postbox">
                                                 <figure>
-                                                    <img id="account-post-avatar" src={`images/profile/` + account.avatar} alt=""/>
+                                                    <img id="account-post-avatar" src={ account.avatar} alt=""/>
                                                 </figure>
                                                 <div className="newpst-input">
                                                     <form>
@@ -527,7 +663,7 @@ const Profile = () => {
                                                     <div className="user-post">
                                                         <div className="friend-info">
                                                             <figure>
-                                                                <img src={`images/profile/` + p.loggedInUser.avatar}
+                                                                <img src={ p.loggedInUser.avatar}
                                                                      id="img-logged" alt=""/>
                                                             </figure>
                                                             <div className="friend-name">
@@ -579,7 +715,7 @@ const Profile = () => {
                                                                         {p.content}
                                                                     </p>
                                                                 </div>
-                                                                <img src={`images/profile/` + p.image} alt=""/>
+                                                                <img src={p.image} alt=""/>
                                                                 <div className="we-video-info">
                                                                     <ul>
                                                                         <li>
@@ -1037,7 +1173,7 @@ const Profile = () => {
                         <div id="modal-avatar">
                             <div>
                                 <figure>
-                                    <img id="account-post-avatar-2" src={`images/profile/` + account.avatar} alt=""/>
+                                    <img id="account-post-avatar-2" src={ account.avatar} alt=""/>
                                 </figure>
                             </div>
                             <div id="modal-avatar-fill">
@@ -1061,7 +1197,7 @@ const Profile = () => {
                         </div>
                         <div id="seclect-img-display">
                             <div className="post-meta">
-                                <img src={selectedImage} alt="Selected Image"
+                                <img src={fileDataURL} alt="Selected Image"
                                      id="selectedImage" style={{display: 'none'}}/>
                                 {selectedImage && (
                                     <span className="remove-image" onClick={remoteFile}>
@@ -1079,7 +1215,7 @@ const Profile = () => {
                                     <li>
                                         <i className="fa fa-image" id="icon-post-img"></i>
                                         <label className="fileContainer">
-                                            <input type="file" id="file1" accept='.png, .jpg, .jpeg' onChange={handleFileChange}/>
+                                            <input type="file" id="file1" accept='.png, .jpg, .jpeg' onChange={changeImage}/>
                                         </label>
                                     </li>
                                     <li>
@@ -1108,13 +1244,13 @@ const Profile = () => {
                     <div className="modal-content">
                         <div className="modal-header">
                             <h4 className="modal-title" >Edit article</h4>
-                            <button type="button" className="close" data-dismiss="modal" id="closeModalButton">&times;</button>
+                            <button type="button" className="close" data-dismiss="modal" id="closeModalButtonUpdate">&times;</button>
                         </div>
                         <div id="modal-avatar">
                             <input type="hidden" id="idPostModal" />
                             <div>
                                 <figure>
-                                    <img id="account-post-avatar-2" src={`images/profile/` + account.avatar} alt=""/>
+                                    <img id="account-post-avatar-2" src={ account.avatar} alt=""/>
                                 </figure>
                             </div>
                             <div id="modal-avatar-fill">
@@ -1138,11 +1274,11 @@ const Profile = () => {
                         </div>
                         <div id="seclect-img-display">
                             <div className="post-meta">
-                                <img src={selectedImageUpdate} alt="Selected Image" id="selectedImageUpdate" style={{ display: 'none' }} />
-                                {selectedImageUpdate && (
+                                <img src={fileDataURL} alt="Selected Image" id="selectedImageUpdate" style={{ display: 'none' }} />
+                                {fileDataURL !== null && (
                                     <span className="remove-image-update" onClick={remoteFileUpdate}>
-                                      <svg id="bi-x-square" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-square" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                                  </span>
+                                        <svg id="bi-x-square" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-square" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                          </span>
                                 )}
                             </div>
 
@@ -1156,7 +1292,7 @@ const Profile = () => {
                                     <li>
                                         <i className="fa fa-image" id="icon-post-img"></i>
                                         <label className="fileContainer">
-                                            <input type="file" id="file2" accept='.png, .jpg, .jpeg' onChange={handleFileChangeUpdate}/>
+                                            <input type="file" id="file2" accept='.png, .jpg, .jpeg' onChange={changeImage}/>
                                         </label>
                                     </li>
                                     <li>
@@ -1175,11 +1311,12 @@ const Profile = () => {
                             </div>
                         </div>
                         <div className="modal-footer">
-                            <button type="button" id="post-post"  onClick={() => updatePost()}>Post</button>
+                            <button type="button" id="post-post"  onClick={() => updatePost()}>Update</button>
                         </div>
                     </div>
                 </div>
             </div>
+            <div className="loader" id="loader" style={{display:"none"}}></div>
         </div>
     );
 };

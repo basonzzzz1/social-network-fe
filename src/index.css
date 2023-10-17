@@ -218,6 +218,310 @@ code {
     stroke-dashoffset: -440;
   }
 }
+#wifi-loader {
+  --background: #62abff;
+  --front-color: #4f29f0;
+  --back-color: #c3c8de;
+  --text-color: #414856;
+  width: 64px;
+  height: 64px;
+  border-radius: 50px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#wifi-loader svg {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#wifi-loader svg circle {
+  position: absolute;
+  fill: none;
+  stroke-width: 6px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: rotate(-100deg);
+  transform-origin: center;
+}
+
+#wifi-loader svg circle.back {
+  stroke: var(--back-color);
+}
+
+#wifi-loader svg circle.front {
+  stroke: var(--front-color);
+}
+
+#wifi-loader svg.circle-outer {
+  height: 86px;
+  width: 86px;
+}
+
+#wifi-loader svg.circle-outer circle {
+  stroke-dasharray: 62.75 188.25;
+}
+
+#wifi-loader svg.circle-outer circle.back {
+  animation: circle-outer135 1.8s ease infinite 0.3s;
+}
+
+#wifi-loader svg.circle-outer circle.front {
+  animation: circle-outer135 1.8s ease infinite 0.15s;
+}
+
+#wifi-loader svg.circle-middle {
+  height: 60px;
+  width: 60px;
+}
+
+#wifi-loader svg.circle-middle circle {
+  stroke-dasharray: 42.5 127.5;
+}
+
+#wifi-loader svg.circle-middle circle.back {
+  animation: circle-middle6123 1.8s ease infinite 0.25s;
+}
+
+#wifi-loader svg.circle-middle circle.front {
+  animation: circle-middle6123 1.8s ease infinite 0.1s;
+}
+
+#wifi-loader svg.circle-inner {
+  height: 34px;
+  width: 34px;
+}
+
+#wifi-loader svg.circle-inner circle {
+  stroke-dasharray: 22 66;
+}
+
+#wifi-loader svg.circle-inner circle.back {
+  animation: circle-inner162 1.8s ease infinite 0.2s;
+}
+
+#wifi-loader svg.circle-inner circle.front {
+  animation: circle-inner162 1.8s ease infinite 0.05s;
+}
+
+#wifi-loader .text {
+  position: absolute;
+  bottom: -40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-transform: lowercase;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+#wifi-loader .text::before, #wifi-loader .text::after {
+  content: attr(data-text);
+}
+
+#wifi-loader .text::before {
+  color: var(--text-color);
+}
+
+#wifi-loader .text::after {
+  color: var(--front-color);
+  animation: text-animation76 3.6s ease infinite;
+  position: absolute;
+  left: 0;
+}
+
+@keyframes circle-outer135 {
+  0% {
+    stroke-dashoffset: 25;
+  }
+
+  25% {
+    stroke-dashoffset: 0;
+  }
+
+  65% {
+    stroke-dashoffset: 301;
+  }
+
+  80% {
+    stroke-dashoffset: 276;
+  }
+
+  100% {
+    stroke-dashoffset: 276;
+  }
+}
+
+@keyframes circle-middle6123 {
+  0% {
+    stroke-dashoffset: 17;
+  }
+
+  25% {
+    stroke-dashoffset: 0;
+  }
+
+  65% {
+    stroke-dashoffset: 204;
+  }
+
+  80% {
+    stroke-dashoffset: 187;
+  }
+
+  100% {
+    stroke-dashoffset: 187;
+  }
+}
+
+@keyframes circle-inner162 {
+  0% {
+    stroke-dashoffset: 9;
+  }
+
+  25% {
+    stroke-dashoffset: 0;
+  }
+
+  65% {
+    stroke-dashoffset: 106;
+  }
+
+  80% {
+    stroke-dashoffset: 97;
+  }
+
+  100% {
+    stroke-dashoffset: 97;
+  }
+}
+
+@keyframes text-animation76 {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  50% {
+    clip-path: inset(0);
+  }
+
+  100% {
+    clip-path: inset(0 0 0 100%);
+  }
+}
+.loader {
+  transform: translateX(750px) translateY(400px);
+  width: 100px;
+  height: 45px;
+  position: fixed;
+}
+
+.loader:before,
+.loader:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #545454;
+  box-shadow: 0 0 0 50px;
+  clip-path: polygon(-50px -20px,10% -12px,20% 0,calc(50% - 15px) 0,calc(50% - 10px) -20px,calc(50% - 8px) -15px,calc(50% + 8px) -15px,calc(50% + 10px) -20px,calc(50% + 15px) 0,80% 0,90% -12px,calc(100% + 50px) -20px,100% 80%,calc(100% + 10px) calc(100% + 10px),60% 100%,50% calc(100% + 15px),40% 100%,-10px calc(100% + 10px),0 80%);
+}
+
+.loader:after {
+  animation: l9 1s infinite;
+  transform: perspective(300px) translateZ(0px)
+}
+
+@keyframes l9 {
+  to {
+    transform: perspective(300px) translateZ(100px);
+    opacity: 0
+  }
+}
+
+.dropdowns1{
+  position: absolute;
+  /*transform: translateX(-215px) ;*/
+  background: #fff none repeat scroll 0 0;
+  border: 1px solid #e1e8ed;
+  list-style: outside none none;
+  max-height: 294px;
+  overflow: auto;
+  padding-left: 0;
+  right: -50px;
+  text-align: left;
+  top: 42px;
+  width: 260px;
+  /*opacity: 0;*/
+  /*visibility: hidden;*/
+  transition: all 0.3s linear 0s;
+}
+  #dropdowns2{
+    position: absolute;
+  }
+#div-img-profile{
+  width: 100px;
+}
+.drops-menu1 {
+  list-style: outside none none;
+  padding-left: 0;
+}
+.drops-menu1 > li {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+}
+.drops-menu1 > li a img {
+  display: inline-block;
+  max-width: 16.7%;
+  vertical-align: top;
+  width: 16.7%;
+  border-radius: 100%;
+}
+.mesg-meta {
+  display: inline-block;
+  padding-left: 10px;
+  vertical-align: middle;
+  width: 81%;
+}
+.drops-menu1 > li > .tag {
+  color: #fff;
+  display: inline-block;
+  font-size: 11px;
+  padding: 0 6px;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+.dropdowns1 > span {
+  border-bottom: 1px solid #ccc;
+  display: inline-block;
+  font-size: 14px;
+  padding: 5px 10px;
+  text-align: center;
+  width: 100%;
+}
+.dropdowns1.active > a {
+  background: #fafafa none repeat scroll 0 0;
+  display: block;
+  font-size: 13px;
+  margin-bottom: 2px;
+  padding: 5px 10px;
+  text-align: center;
+}
+.dropdowns1.active {
+  opacity: 1;
+  visibility: visible;
+}
+/*a:-webkit-any-link {*/
+/*  color: -webkit-link;*/
+/*  cursor: pointer;*/
+/*  !*text-decoration: underline;*!*/
+/*}*/
 .button span {
   cursor: pointer;
   display: inline-block;
@@ -266,10 +570,11 @@ code {
   margin-left: 20px;
 }
 #img-profile{
-  width: 50px;
-  height: 50px;
+  transform: translateX(1120px) translateY(-35px);
+  width: 42px;
+  height: 42px;
   margin-top: -20px;
-  
+  border: 3px solid grey;
 }
 .user-img{
   margin-bottom: -50px;
@@ -375,7 +680,6 @@ code {
   padding: 4px;
   margin: 4px;
   transform: translateX(-27px) translateY(220px);
-  
 }
 .remove-image-update {
   cursor: pointer;
@@ -417,7 +721,15 @@ code {
   height: 2em;
   z-index: 2;
 }
-
+.img-message-friend{
+  width: 40px;
+  height: 40px;
+  border: 1px solid grey;
+}
+#div-message-view-more{
+  text-align: center;
+  color: #0a98dc;
+}
 .menu .btn {
   position: absolute;
   top: 0;

@@ -4,10 +4,19 @@ import Service from "../services/Service";
 import moment from 'moment';
 import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
+import {toast } from 'react-toastify';
+import {storage} from "../Config/firebase";
+import {ref, uploadBytes, getDownloadURL} from "firebase/storage";
+import {v4} from "uuid";
+import PostService from "../services/PostService";
+import {useSelector} from "react-redux";
 
+
+const imageMimeType = /image\/(png|jpg|jpeg)/i;
 const Body = () => {
     const [menu, setMenu] = useState(false);
     const [post, setPost] = useState({});
+    const [file, setFile] = useState(null);
     const [posts, setPosts] = useState([]);
     const [status, setStatus] = useState([]);
     const [postFull, setPostFull] = useState([]);
@@ -19,6 +28,8 @@ const Body = () => {
     const [selectedImageUpdate, setSelectedImageUpdate] = useState(null);
     const socket = new SockJS('http://localhost:8080/ws');
     const stompClient = Stomp.over(socket);
+    const [fileDataURL, setFileDataURL] = useState(null);
+    const userToken = useSelector((state) => state.userToken);
     stompClient.connect({}, (frame) => {
         alert('Connected to WebSocket');
         // Lắng nghe tin nhắn từ máy chủ
@@ -75,6 +86,27 @@ const Body = () => {
             console.log(error);
         });
     }, [load]);
+
+    useEffect(() => {
+        let fileReader, isCancel = false;
+        if (file) {
+            fileReader = new FileReader();
+            fileReader.onload = (e) => {
+                const {result} = e.target;
+                if (result && !isCancel) {
+                    setFileDataURL(result)
+                }
+            }
+            fileReader.readAsDataURL(file);
+        }
+        return () => {
+            isCancel = true;
+            if (fileReader && fileReader.readyState === 1) {
+                fileReader.abort();
+            }
+        }
+    }, [file]);
+
     useEffect(() => {
         Service.getAllStatus().then((response) => {
             setStatus(response.data);
@@ -105,41 +137,102 @@ const Body = () => {
         setPostFull(updatedPosts);
     }, [posts]);
     useEffect(() => {
-        if (postContent != "") {
+        if (postContent != "" || selectedImage != null) {
             document.getElementById("post-post").style.backgroundColor = "#38B6FF";
             document.getElementById("post-post").style.color = "#fcfcfc";
         } else {
             document.getElementById("post-post").style.backgroundColor = "#d2d7e1";
             document.getElementById("post-post").style.color = "#888888";
         }
-    }, [postContent]);
+    }, [postContent,selectedImage]);
     const logout = () => {
         localStorage.removeItem("idAccount");localStorage.removeItem("token");localStorage.removeItem("account");
     }
-    const createPost = () => {
-        let file = document.getElementById("file1").files[0];
-        let data = new FormData();
-        let content = document.getElementById("post-content").value;
-        let statusId = document.getElementById("status-select").value;
-        data.append("content", content);
-        data.append("file", file);
-        data.append("statusId", statusId);
-        if (postContent !== "") {
-            Service.createPost(data).then((response) => {
-                document.getElementById("post-content").value = "";
-                setPostContent("");
-                setSelectedImage(null)
-                document.getElementById("selectedImage").style.display = 'none';
-                setLoad(true);
+    // const createPost = () => {
+    //     let file = document.getElementById("file1").files[0];
+    //     let data = new FormData();
+    //     let content = document.getElementById("post-content").value;
+    //     let statusId = document.getElementById("status-select").value;
+    //     data.append("content", content);
+    //     data.append("file", file);
+    //     data.append("statusId", statusId);
+    //     if (postContent !== "") {
+    //         Service.createPost(data).then((response) => {
+    //             document.getElementById("post-content").value = "";
+    //             setPostContent("");
+    //             setSelectedImage(null)
+    //             document.getElementById("selectedImage").style.display = 'none';
+    //             setLoad(true);
+    //             const closeModalButton = document.getElementById("closeModalButton");
+    //             if (closeModalButton) {
+    //                 closeModalButton.click();
+    //             }
+    //             remoteFile()
+    //         }).catch((error) => {
+    //             alert("thất cmn bại !")
+    //         })
+    //     } else {
+    //     }
+    // }
+    const changeImage = (event) => {
+        const file = event.target.files[0];
+        console.log(file);
+        if (!file.type.match(imageMimeType)) {
+            toast.error("Image mime type is not valid");
+            return;
+        }
+        setSelectedImageUpdate(file);
+        setSelectedImage(file)
+        document.getElementById("selectedImage").style.display = 'block';
+        setFile(file);
+    }
+    const createPost = async () => {
+        try {
+            if (file == null) {
+                let content = document.getElementById("post-content").value;
+                let statusId = document.getElementById("status-select").value;
+                const newP = {content : content,
+                                               status : {id:statusId} ,
+                    loggedInUser:{id: userToken.id}};
+                const response = await PostService.createPost(newP);
+                console.log(response.data);
                 const closeModalButton = document.getElementById("closeModalButton");
                 if (closeModalButton) {
                     closeModalButton.click();
                 }
+                toast.success('Create Post Successfully!');
+                setPostContent("");
+                setLoad(!load);
+                return;
+            }else {
+                alert(2)
+                let content = document.getElementById("post-content").value;
+                let statusId = document.getElementById("status-select").value;
+                const imageRef = ref(storage, `images/${file.name + v4()}`);
+                const snapshot = await uploadBytes(imageRef, file);
+                const url = await getDownloadURL(snapshot.ref);
+                const closeModalButton = document.getElementById("closeModalButton");
+                setSelectedImage(file)
+                const newP = {content : content,
+                    status : {id:statusId},
+                    image:url,
+                    loggedInUser:{id: userToken.id}
+                };
+                const response = await PostService.createPost(newP);
+                console.log(response.data);
+                if (closeModalButton) {
+                    closeModalButton.click();
+                }
                 remoteFile()
-            }).catch((error) => {
-                alert("thất cmn bại !")
-            })
-        } else {
+                toast.success('Create Post Successfully!');
+                setPostContent("");
+                setFile(null);
+                setFileDataURL(null);
+                setLoad(!load);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            toast.error('Error while creating the post.');
         }
     }
     const handlePostContentChange = (e) => {
@@ -185,10 +278,10 @@ const Body = () => {
             document.getElementById(`menu${id}`).style.display = 'block';
         }
     }
-    const isMenu = (id) => {
-        let count = 0;
-        document.getElementById(`menu${id}`).style.display = 'block';
-    }
+    // const isMenu = (id) => {
+    //     let count = 0;
+    //     document.getElementById(`menu${id}`).style.display = 'block';
+    // }
     const findByPost = (id) => {
         Service.findByPost(id).then((response) => {
             setPost(response)
@@ -199,7 +292,7 @@ const Body = () => {
             // let virtualImageFile = new File([''], imageFileName, { type: 'image/*' });
             // fileInput.files = [virtualImageFile];
             if (response.image) {
-                setSelectedImageUpdate(`images/profile/` + response.image);
+                setSelectedImageUpdate(  response.image);
                 loadImage(response.image);
             }
             // document.getElementById("file2").files[0] = response.image;
@@ -218,7 +311,7 @@ const Body = () => {
     }
     const loadImage = (imageFileName) => {
         const img = new Image();
-        img.src = `images/profile/` + imageFileName;
+        img.src = imageFileName;
         img.onload = () => {
             document.getElementById("selectedImageUpdate").src = img.src;
             document.getElementById("selectedImageUpdate").style.display = 'block';
@@ -260,6 +353,7 @@ const Body = () => {
     }
     useEffect(() => {
         Service.profile().then((response) => {
+
             setAccount(response.data)
         }).catch((error) => {
             console.log(error);
@@ -431,7 +525,7 @@ const Body = () => {
                                         <div className="central-meta" id="central-post">
                                             <div className="new-postbox">
                                                 <figure>
-                                                    <img id="account-post-avatar" src={`images/profile/` + account.avatar} alt=""/>
+                                                    <img id="account-post-avatar" src={account.avatar} alt=""/>
                                                 </figure>
                                                 <div className="newpst-input">
                                                     <form>
@@ -486,7 +580,7 @@ const Body = () => {
                                                     <div className="user-post">
                                                         <div className="friend-info">
                                                             <figure>
-                                                                <img src={`images/profile/` + p.loggedInUser.avatar}
+                                                                <img src={p.loggedInUser.avatar}
                                                                      id="img-logged" alt=""/>
                                                             </figure>
                                                             <div className="friend-name">
@@ -538,7 +632,7 @@ const Body = () => {
                                                                         {p.content}
                                                                     </p>
                                                                 </div>
-                                                                <img src={`images/profile/` + p.image} alt=""/>
+                                                                <img src={p.image} alt=""/>
                                                                 <div className="we-video-info">
                                                                     <ul>
                                                                         <li>
@@ -1083,7 +1177,7 @@ const Body = () => {
                         <div id="modal-avatar">
                             <div>
                                 <figure>
-                                <img id="account-post-avatar-2" src={`images/profile/` + account.avatar} alt=""/>
+                                <img id="account-post-avatar-2" src={account.avatar} alt=""/>
                                 </figure>
                             </div>
                             <div id="modal-avatar-fill">
@@ -1107,7 +1201,7 @@ const Body = () => {
                         </div>
                           <div id="seclect-img-display">
                               <div className="post-meta">
-                              <img src={selectedImage} alt="Selected Image"
+                              <img src={fileDataURL} alt="Selected Image"
                                    id="selectedImage" style={{display: 'none'}}/>
                               {selectedImage && (
                                   <span className="remove-image" onClick={remoteFile}>
@@ -1126,7 +1220,7 @@ const Body = () => {
                                       <li>
                                           <i className="fa fa-image" id="icon-post-img"></i>
                                           <label className="fileContainer">
-                                              <input type="file" id="file1" accept='.png, .jpg, .jpeg' onChange={handleFileChange}/>
+                                              <input type="file" id="file1" accept='.png, .jpg, .jpeg' onChange={changeImage}/>
                                           </label>
                                       </li>
                                       <li>
@@ -1161,7 +1255,7 @@ const Body = () => {
                             <input type="hidden" id="idPostModal" />
                             <div>
                                 <figure>
-                                    <img id="account-post-avatar-2" src={`images/profile/` + account.avatar} alt=""/>
+                                    <img id="account-post-avatar-2" src={account.avatar} alt=""/>
                                 </figure>
                             </div>
                             <div id="modal-avatar-fill">
@@ -1203,7 +1297,7 @@ const Body = () => {
                                     <li>
                                         <i className="fa fa-image" id="icon-post-img"></i>
                                         <label className="fileContainer">
-                                            <input type="file" id="file2" accept='.png, .jpg, .jpeg' onChange={handleFileChangeUpdate}/>
+                                            <input type="file" id="file2" accept='.png, .jpg, .jpeg' onChange={changeImage}/>
                                         </label>
                                     </li>
                                     <li>

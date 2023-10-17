@@ -1,7 +1,6 @@
 import { Link, Navigate } from "react-router-dom";
 import React, { useEffect, useState } from 'react'
 import Service from "../services/Service";
-
 const Login = () => {
     const [account, setAccount] = useState({});
     const [isLoggedIn, setIsLoggedIn] = useState(false);

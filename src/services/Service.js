@@ -2,14 +2,13 @@ import axios from "axios";
 import { toast } from 'react-toastify';
 import {
     LIKE_API,
-    LIKE_DELETE_API,
+    LIKE_DELETE_API, LIST_MESSAGE_BY_TIME_ACCOUNT,
     LOGIN_API,
-    POST_API, POST_DELETE_API, POST_FOLLOW_API, POST_STATUS_API, POST_USE_API,
+    POST_API, POST_DELETE_API, POST_FOLLOW_API, POST_STATUS_API, POST_UPDATE_API, POST_USE_API,
     REGISTER_API,
     USER_EDIT_PROFILE_API,
     USER_PROFILE_API
 } from "../api/api";
-import ToastComponent from "../common/ToastComponent";
 // import SockJS from 'sockjs-client';
 // import Stomp from 'stompjs';
 // const socket = new SockJS('http://localhost:8080/ws');
@@ -48,13 +47,12 @@ const Service = {
             axios.post(LOGIN_API,account)
                 .then(response => {
                     console.log(response)
+                    toast.success("login success !");
                     localStorage.setItem("idAccount",response.data.id);
                     resolve(response.data);
                 })
                 .catch(function (err) {
-                    toast.error(<ToastComponent.errorToast text={'Unauthorized'} />, {
-                        position: toast.POSITION.TOP_RIGHT
-                    });
+                    toast.error(err);
                     reject(err)
                 });
         });
@@ -73,9 +71,11 @@ const Service = {
             };
             axios.request(config)
                 .then(response => {
+                    toast.success("Register Success !");
                     resolve(response.data);
                 })
                 .catch(function (err) {
+                    toast.error(err)
                     reject(err)
                 });
         });
@@ -95,31 +95,33 @@ const Service = {
             };
             axios.request(config)
                 .then(response => {
+                    toast.success("Create Post Success !");
                     resolve(response.data);
                 })
                 .catch(function (err) {
+                    toast.error(err)
                     reject(err)
                 });
         });
     },
-    updatePost: (formData,iPost) => {
-        console.log(formData);
+    updatePost: (post1) => {
         return new Promise((resolve, reject) => {
-            let id = localStorage.getItem("idAccount");
             let config = {
                 method: 'post',
                 maxBodyLength: Infinity,
-                url: POST_API+"/"+id+"/"+iPost,
+                url: POST_UPDATE_API,
+                data: post1,
                 headers: {
-                    'Content-Type': 'multipart/form-data',
+                    'Content-Type': 'application/json',
                 },
-                data : formData
             };
             axios.request(config)
                 .then(response => {
+                    toast.success("Update Post Success !");
                     resolve(response.data);
                 })
                 .catch(function (err) {
+                    toast.error(err)
                     reject(err)
                 });
         });
@@ -193,9 +195,11 @@ const Service = {
             };
             axios.request(config)
                 .then(response => {
+                    toast.success("Edit Profile Success !");
                     resolve(response.data);
                 })
                 .catch(function (err) {
+                    toast.error(err)
                     reject(err)
                 });
         });
@@ -231,9 +235,9 @@ const Service = {
                 });
         });
     },
-    deletePost: (id) => {
+    findByListMessageFriend: (id) => {
         return new Promise((resolve, reject) => {
-            axios.post(POST_DELETE_API+id, {
+            axios.get(LIST_MESSAGE_BY_TIME_ACCOUNT+localStorage.getItem("idAccount"),{
                 headers: {
                     "Authorization": "Bearer " + localStorage.getItem('token'),
                 }
@@ -242,6 +246,23 @@ const Service = {
                     resolve(response.data);
                 })
                 .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+    deletePost: (id) => {
+        return new Promise((resolve, reject) => {
+            axios.post(POST_DELETE_API+id, {
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    toast.success("Delete Post Success !");
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    toast.error(err)
                     reject(err)
                 });
         });
@@ -255,9 +276,11 @@ const Service = {
                 }
             })
                 .then(response => {
+                    toast.success("Like Post Success !");
                     resolve(response.data);
                 })
                 .catch(function (err) {
+                    toast.error(err)
                     reject(err)
                 });
         });
@@ -288,9 +311,11 @@ const Service = {
             };
             axios.request(config)
                 .then(response => {
+                    toast.success("Delete Like Success !");
                     resolve(response);
                 })
                 .catch(function (err) {
+                    toast.error(err)
                     reject(err)
                 });
         });

@@ -1,10 +1,23 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Service from "../services/Service";
-
+import {Link, Navigate} from "react-router-dom";
+import * as Yup from "yup";
+import _ from 'lodash';
+import {ErrorMessage, Field, Form, Formik} from "formik";
+import {toast} from "react-toastify";
+import {useDispatch, useSelector} from "react-redux";
+import {updateUserToken} from "../redux/actions/userActions";
+import UserService from "../services/UserService";
+import LeftSideBarAbout from "./LeftSideBarAbout";
 const EditProfile = () => {
     const [account, setAccount] = useState({});
     const [load, setLoad] = useState(true);
     const [selectedGender, setSelectedGender] = useState(true);
+    const userToken = useSelector((state) => state.userToken);
+    const dispatch = useDispatch();
+
+    const [user, setUser] = useState({});
+    const [isEdit, setIsEdit] = useState(false);
 
     // Create refs for input elements
     const inputRef = useRef();
@@ -51,11 +64,96 @@ const EditProfile = () => {
         });
     };
 
+
+    /*const getUserById = () => {
+        UserService.getUserById(userToken.id)
+            .then((response) => {
+                setUser(response.data);
+            })
+            .catch((error) => {
+                console.log(error);
+            })
+    }*/
+    const getUserById = async () => {
+        try {
+            const response = await UserService.getUserById(userToken.id);
+            setUser(response.data);
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    }
+
+    const changeInputEdit = (event) => {
+        const {name, value} = event.target;
+        setUser({...user, [name]: value});
+    }
+
+    useEffect(() => {
+        getUserById();
+    }, []);
+
+    /*const editUser = () => {
+        UserService.editUser(user)
+            .then((response) => {
+                console.log(response.data);
+                let user = JSON.parse(localStorage.getItem("userToken"));
+                user = {...user, ...response.data};
+                localStorage.setItem('userToken', JSON.stringify(user));
+                dispatch(updateUserToken(response.data));
+                toast.success("Edited information successfully !")
+                setIsEdit(true);
+            })
+            .catch((error) => {
+                console.log(error);
+                toast.error("Editing information failed !");
+            })
+    }*/
+    const editUser = async () => {
+        try {
+            const response = await UserService.editUser(user);
+            console.log(response.data);
+
+            /*let user = JSON.parse(localStorage.getItem("userToken"));
+            user = {...user, ...response.data};
+            localStorage.setItem('userToken', JSON.stringify(user));
+            dispatch(updateUserToken(response.data));*/
+            const updatedUser = {...userToken, ...response.data};
+            localStorage.setItem("userToken", JSON.stringify(updatedUser));
+            dispatch(updateUserToken(response.data));
+            toast.success("Edited information successfully !");
+            setIsEdit(true);
+        } catch (error) {
+            console.error("Error:", error);
+            toast.error("Editing information failed !");
+        }
+    }
+
+    const validateSchemaEditInfo = Yup.object().shape({
+        email: Yup.string()
+            .required('Email cannot be blank')
+            .email('Invalid email'),
+        phone: Yup.string()
+            .required('Phone number can not be left blank')
+            .matches(/^[0-9]+$/, 'Phone numbers must contain only numbers'),
+        birthday: Yup.string()
+            .required('Date of birth cannot be left blank'),
+        firstName: Yup.string()
+            .required('FirstName cannot be blank')
+            .matches(/^[a-zA-Z0-9\s]+$/, 'FirstName cannot contain special characters'),
+        lastName: Yup.string()
+            .required('LastName cannot be blank')
+            .matches(/^[a-zA-Z0-9\s]+$/, 'LastName cannot contain special characters'),
+        gender: Yup.string()
+            .required('Gender cannot be blank'),
+        address: Yup.string()
+            .required('Address cannot be blank'),
+    })
+
     return (
         <div>
             <section>
                 <div className="feature-photo">
-                    <figure><img src="images/resources/timeline-1.jpg" alt=""/></figure>
+                    <figure><img src={userToken.thumbnail} alt="" style={{width: 1536, height: 449.783}}/></figure>
                     <div className="add-btn">
                         <span>1205 followers</span>
                         <a href="#" title="" data-ripple="">Add Friend</a>
@@ -72,7 +170,7 @@ const EditProfile = () => {
                             <div className="col-lg-2 col-sm-3">
                                 <div className="user-avatar">
                                     <figure>
-                                        <img src={`images/profile/`+account.avatar} alt=""/>
+                                        <img src={userToken.avatar} alt="" style={{width: 225.667, height: 220.817}}/>
                                             <form className="edit-phto">
                                                 <i className="fa fa-camera-retro"></i>
                                                 <label className="fileContainer">
@@ -87,8 +185,8 @@ const EditProfile = () => {
                                 <div className="timeline-info">
                                     <ul>
                                         <li className="admin-name">
-                                            <h5>Janice Griffith</h5>
-                                            <span>Group Admin</span>
+                                            <h5>{account.firstName} {account.lastName}</h5>
+                                            <span>{account.email}</span>
                                         </li>
                                         <li>
                                             <a className="" href="time-line.html" title="" data-ripple="">time line</a>
@@ -116,244 +214,117 @@ const EditProfile = () => {
                                 <div className="row" id="page-contents">
                                     <div className="col-lg-3">
                                         <aside className="sidebar static">
-                                            <div className="widget">
-                                                <h4 className="widget-title">Recent Activity</h4>
-                                                <ul className="activitiez">
-                                                    <li>
-                                                        <div className="activity-meta">
-                                                            <i>10 hours Ago</i>
-                                                            <span><a title="" href="#">Commented on Video posted </a></span>
-                                                            <h6>by <a href="time-line.html">black demon.</a></h6>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <div className="activity-meta">
-                                                            <i>30 Days Ago</i>
-                                                            <span><a title="" href="#">Posted your status. “Hello guys, how are you?”</a></span>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <div className="activity-meta">
-                                                            <i>2 Years Ago</i>
-                                                            <span><a title="" href="#">Share a video on her timeline.</a></span>
-                                                            <h6>"<a href="#">you are so funny mr.been.</a>"</h6>
-                                                        </div>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                            <div className="widget stick-widget">
-                                                <h4 className="widget-title">Edit info</h4>
-                                                <ul className="naves">
-                                                    <li>
-                                                        <i className="ti-info-alt"></i>
-                                                        <a href="edit-profile-basic.html" title="">Basic info</a>
-                                                    </li>
-                                                    <li>
-                                                        <i className="ti-mouse-alt"></i>
-                                                        <a href="edit-work-eductation.html" title="">Education & Work</a>
-                                                    </li>
-                                                    <li>
-                                                        <i className="ti-heart"></i>
-                                                        <a href="edit-interest.html" title="">My interests</a>
-                                                    </li>
-                                                    <li>
-                                                        <i className="ti-settings"></i>
-                                                        <a href="edit-account-setting.html" title="">account setting</a>
-                                                    </li>
-                                                    <li>
-                                                        <i className="ti-lock"></i>
-                                                        <a href="edit-password.html" title="">change password</a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                            {/*/<!-- settings widget -->*/}
+                                            <LeftSideBarAbout/>
                                         </aside>
                                     </div>
-                                    {/*// <!-- sidebar -->*/}
-                                    <div className="col-lg-6">
+                                    <div className="col-lg-8">
                                         <div className="central-meta">
                                             <div className="editing-info">
-                                                <h5 className="f-title"><i className="ti-info-alt"></i> Edit Basic Information</h5>
-
-
-
-                                                <form method="post">
-                                                    <div className="form-group half">
-                                                        <input type="text" ref={inputRef} required="required" />
-                                                        <label className="control-label" htmlFor="input">First Name</label><i className="mtrl-select"></i>
-                                                    </div>
-                                                    <div className="form-group half">
-                                                        <input type="text" ref={lastNameRef} required="required" />
-                                                        <label className="control-label" htmlFor="input">Last Name</label><i className="mtrl-select"></i>
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <input type="text" ref={emailRef} required="required" />
-                                                        <label className="control-label" htmlFor="input">
-                                                            <a href="https://wpkixx.com/cdn-cgi/l/email-protection" className="__cf_email__" data-cfemail="4b0e262a22270b">[email&#160;protected]</a>
-                                                        </label><i className="mtrl-select"></i>
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <input type="text" ref={phoneRef} required="required" />
-                                                        <label className="control-label" htmlFor="input">Phone No.</label><i className="mtrl-select"></i>
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <input type="date" ref={dateOfBirthRef} required="required" />
-                                                        <label className="control-label" htmlFor="input">Date Of Birth</label><i className="mtrl-select"></i>
-                                                    </div>
-                                                    {/* Rest of your JSX code */}
-                                                    <div className="form-radio" id="gender">
-                                                        <div className="radio">
-                                                            <label>
-                                                                <input type="radio" name="radio" value={true} checked={selectedGender === true} onChange={handleGenderChange} /><i className="check-box"></i>Male
-                                                            </label>
-                                                        </div>
-                                                        <div className="radio" id="radio-2">
-                                                            <label>
-                                                                <input type="radio" name="radio" value={false} checked={selectedGender === false} onChange={handleGenderChange} /><i className="check-box"></i>Female
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <input type="text" required="required" />
-                                                        <label className="control-label" htmlFor="input">City</label><i className="mtrl-select"></i>
-                                                    </div>
-                                                    <div className="submit-btns">
-                                                        <button type="button" className="mtr-btn"><span>Cancel</span></button>
-                                                        <button type="button" id="hv-1" className="mtr-btn" onClick={() => editProfile()}><span>Update</span></button>
-                                                    </div>
-                                                </form>
+                                                <h5 className="f-title"><i className="ti-info-alt"></i> Edit Basic
+                                                    Information</h5>
+                                                {!_.isEmpty(user) &&
+                                                    <Formik initialValues={
+                                                        {
+                                                            firstName: user.firstName,
+                                                            lastName: user.lastName,
+                                                            email: user.email,
+                                                            phone: user.phone,
+                                                            birthday: user.birthday,
+                                                            gender: user.gender,
+                                                            address: user.address
+                                                        }
+                                                    }
+                                                            validationSchema={validateSchemaEditInfo}
+                                                            onSubmit={(values) => {
+                                                                editUser();
+                                                                console.log(values);
+                                                            }}>
+                                                        <Form>
+                                                            <div className="form-group half">
+                                                                <Field type="text" name="firstName"
+                                                                       value={user.firstName}
+                                                                       onInput={changeInputEdit} required="required"/>
+                                                                <ErrorMessage name="firstName" component="div"
+                                                                              className="text-danger"/>
+                                                                <label className="control-label" htmlFor="input">First
+                                                                    Name</label><i className="mtrl-select"></i>
+                                                            </div>
+                                                            <div className="form-group half">
+                                                                <Field type="text" name="lastName" value={user.lastName}
+                                                                       onInput={changeInputEdit} required="required"/>
+                                                                <ErrorMessage name="lastName" component="div"
+                                                                              className="text-danger"/>
+                                                                <label className="control-label" htmlFor="input">Last
+                                                                    Name</label><i className="mtrl-select"></i>
+                                                            </div>
+                                                            <div className="form-group">
+                                                                <Field type="text" name="email" value={user.email}
+                                                                       onInput={changeInputEdit} required="required"/>
+                                                                <ErrorMessage name="email" component="div"
+                                                                              className="text-danger"/>
+                                                                <label className="control-label"
+                                                                       htmlFor="input">Email</label><i
+                                                                className="mtrl-select"></i>
+                                                            </div>
+                                                            <div className="form-group">
+                                                                <Field type="text" name="phone" value={user.phone}
+                                                                       onInput={changeInputEdit} required="required"/>
+                                                                <ErrorMessage name="phone" component="div"
+                                                                              className="text-danger"/>
+                                                                <label className="control-label" htmlFor="input">Phone
+                                                                    No.</label><i className="mtrl-select"></i>
+                                                            </div>
+                                                            <div className="form-group half">
+                                                                <Field type="date" name="birthday" value={user.birthday}
+                                                                       onInput={changeInputEdit} required="required"/>
+                                                                <ErrorMessage name="birthday" component="div"
+                                                                              className="text-danger"/>
+                                                                <label className="control-label"
+                                                                       htmlFor="input">Birthday</label><i
+                                                                className="mtrl-select"></i>
+                                                            </div>
+                                                            <div className="form-group half">
+                                                                <Field as="select" name="gender" value={user.gender}
+                                                                       onChange={changeInputEdit} required="required">
+                                                                    <option value="true">Male</option>
+                                                                    <option value="false">Female</option>
+                                                                </Field>
+                                                                <ErrorMessage name="gender" component="div"
+                                                                              className="text-danger"/>
+                                                                <label className="control-label"
+                                                                       htmlFor="input">Gender</label><i
+                                                                className="mtrl-select"></i>
+                                                            </div>
+                                                            <div className="form-group">
+                                                                <Field type="text" name="address" value={user.address}
+                                                                       onInput={changeInputEdit} required="required"/>
+                                                                <ErrorMessage name="address" component="div"
+                                                                              className="text-danger"/>
+                                                                <label className="control-label"
+                                                                       htmlFor="input">Address</label><i
+                                                                className="mtrl-select"></i>
+                                                            </div>
+                                                            <div className="submit-btns">
+                                                                <Link to={"/profile/about"}
+                                                                      className="mtr-btn"><span>Cancel</span></Link>
+                                                                <span> </span>
+                                                                <button className="mtr-btn" type="submit">
+                                                                    <span>Update</span>
+                                                                </button>
+                                                            </div>
+                                                        </Form>
+                                                    </Formik>
+                                                }
                                             </div>
                                         </div>
                                     </div>
-                                    {/*// <!-- centerl meta -->*/}
-                                    <div className="col-lg-3">
-                                        <aside className="sidebar static">
-                                            <div className="widget">
-                                                <h4 className="widget-title">Your page</h4>
-                                                <div className="your-page">
-                                                    <figure>
-                                                        <a title="" href="#"><img alt="" src="images/resources/friend-avatar9.jpg"/></a>
-                                                    </figure>
-                                                    <div className="page-meta">
-                                                        <a className="underline" title="" href="#">My page</a>
-                                                        <span><i className="ti-comment"></i>Messages <em>9</em></span>
-                                                        <span><i className="ti-bell"></i>Notifications <em>2</em></span>
-                                                    </div>
-                                                    <div className="page-likes">
-                                                        <ul className="nav nav-tabs likes-btn">
-                                                            <li className="nav-item"><a data-toggle="tab" href="#link1" className="active">likes</a></li>
-                                                            <li className="nav-item"><a data-toggle="tab" href="#link2" className="">views</a></li>
-                                                        </ul>
-                                                        {/*// <!-- Tab panes -->*/}
-                                                        <div className="tab-content">
-                                                            <div id="link1" className="tab-pane active fade show">
-                                                                <span><i className="ti-heart"></i>884</span>
-                                                                <a title="weekly-likes" href="#">35 new likes this week</a>
-                                                                <div className="users-thumb-list">
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="Anderw">
-                                                                        <img alt="" src="images/resources/userlist-1.jpg"/>
-                                                                    </a>
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="frank">
-                                                                        <img alt="" src="images/resources/userlist-2.jpg"/>
-                                                                    </a>
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="Sara">
-                                                                        <img alt="" src="images/resources/userlist-3.jpg"/>
-                                                                    </a>
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="Amy">
-                                                                        <img alt="" src="images/resources/userlist-4.jpg"/>
-                                                                    </a>
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="Ema">
-                                                                        <img alt="" src="images/resources/userlist-5.jpg"/>
-                                                                    </a>
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="Sophie">
-                                                                        <img alt="" src="images/resources/userlist-6.jpg"/>
-                                                                    </a>
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="Maria">
-                                                                        <img alt="" src="images/resources/userlist-7.jpg"/>
-                                                                    </a>
-                                                                </div>
-                                                            </div>
-                                                            <div id="link2" className="tab-pane fade">
-                                                                <span><i className="ti-eye"></i>445</span>
-                                                                <a title="weekly-likes" href="#">440 new views this week</a>
-                                                                <div className="users-thumb-list">
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="Anderw">
-                                                                        <img alt="" src="images/resources/userlist-1.jpg"/>
-                                                                    </a>
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="frank">
-                                                                        <img alt="" src="images/resources/userlist-2.jpg"/>
-                                                                    </a>
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="Sara">
-                                                                        <img alt="" src="images/resources/userlist-3.jpg"/>
-                                                                    </a>
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="Amy">
-                                                                        <img alt="" src="images/resources/userlist-4.jpg"/>
-                                                                    </a>
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="Ema">
-                                                                        <img alt="" src="images/resources/userlist-5.jpg"/>
-                                                                    </a>
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="Sophie">
-                                                                        <img alt="" src="images/resources/userlist-6.jpg"/>
-                                                                    </a>
-                                                                    <a data-toggle="tooltip" title="" href="#" data-original-title="Maria">
-                                                                        <img alt="" src="images/resources/userlist-7.jpg"/>
-                                                                    </a>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="widget stick-widget">
-                                                <h4 className="widget-title">Who's follownig</h4>
-                                                <ul className="followers">
-                                                    <li>
-                                                        <figure><img src="images/resources/friend-avatar2.jpg" alt=""/></figure>
-                                                        <div className="friend-meta">
-                                                            <h4><a href="time-line.html" title="">Kelly Bill</a></h4>
-                                                            <a href="#" title="" className="underline">Add Friend</a>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <figure><img src="images/resources/friend-avatar4.jpg" alt=""/></figure>
-                                                        <div className="friend-meta">
-                                                            <h4><a href="time-line.html" title="">Issabel</a></h4>
-                                                            <a href="#" title="" className="underline">Add Friend</a>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <figure><img src="images/resources/friend-avatar6.jpg" alt=""/></figure>
-                                                        <div className="friend-meta">
-                                                            <h4><a href="time-line.html" title="">Andrew</a></h4>
-                                                            <a href="#" title="" className="underline">Add Friend</a>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <figure><img src="images/resources/friend-avatar8.jpg" alt=""/></figure>
-                                                        <div className="friend-meta">
-                                                            <h4><a href="time-line.html" title="">Sophia</a></h4>
-                                                            <a href="#" title="" className="underline">Add Friend</a>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <figure><img src="images/resources/friend-avatar3.jpg" alt=""/></figure>
-                                                        <div className="friend-meta">
-                                                            <h4><a href="time-line.html" title="">Allen</a></h4>
-                                                            <a href="#" title="" className="underline">Add Friend</a>
-                                                        </div>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                            {/*// <!-- who's following -->*/}
-                                        </aside>
-                                    </div>
-                                    {/*// <!-- sidebar -->*/}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
+            {isEdit && <Navigate to="/about"/>}
         </div>
     );
 };

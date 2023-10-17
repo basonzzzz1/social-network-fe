@@ -6,6 +6,8 @@ const Header = () => {
         const [account, setAccount] = useState({});
         const [userSettingActive, setUserSettingActive] = useState(false);
         const [load, setLoad] = useState(true);
+        const [dropdown, setDropdown] = useState(false);
+        const [texted, setTexted] = useState([]);
         useEffect(() => {
             Service.profile().then((response) => {
                 setAccount(response.data)
@@ -14,15 +16,48 @@ const Header = () => {
                 setLoad(false)
             })
         }, [load]);
+    useEffect(() => {
+        Service.findByListMessageFriend().then((response) => {
+                setTexted(response)
+               console.log(response)
+        }).catch((error) => {
+            setLoad(false)
+        })
+    }, [load]);
         const toggleUserSetting = () => {
             setUserSettingActive((prevState) => !prevState);
         };
-        console.log(account);
     const logout = () => {
         localStorage.removeItem("idAccount");
         localStorage.removeItem("token");
         localStorage.removeItem("account");
     }
+    function calculateTimeChat(createdAt) {
+        const currentTime = new Date();
+        const postedTime = new Date(createdAt);
+        const timeDiff = currentTime - postedTime;
+        if (timeDiff < 60000) {
+            return Math.floor(timeDiff / 1000) + " seconds ago";
+        } else if (timeDiff < 3600000) {
+            return Math.floor(timeDiff / 60000) + " minutes ago";
+        } else if (timeDiff < 86400000) {
+            return Math.floor(timeDiff / 3600000) + " hours ago";
+        } else if (timeDiff < 2592000000) {
+            return Math.floor(timeDiff / 86400000) + " days ago";
+        } else if (timeDiff < 31536000000) {
+            return Math.floor(timeDiff / 2592000000) + " months ago";
+        } else {
+            return Math.floor(timeDiff / 31536000000) + " years ago";
+        }
+    }
+
+    const toggleDropdown = () => {
+       if (dropdown === false){
+           setDropdown(true);
+       }else{
+           setDropdown(false);
+       }
+    };
     if (localStorage.getItem("idAccount") == null) {
         return(
             <>
@@ -357,69 +392,32 @@ const Header = () => {
                                 </div>
                             </li>
                             <li>
-                                <a href="#" title="Messages" data-ripple=""><i
-                                    className="ti-comment"></i><span>12</span></a>
-                                <div className="dropdowns">
-                                    <span>5 New Messages</span>
-                                    <ul className="drops-menu">
-                                        <li>
-                                            <a href="notifications.html" title="">
-                                                <img src="images/resources/thumb-1.jpg" alt=""/>
-                                                <div className="mesg-meta">
-                                                    <h6>sarah Loren</h6>
-                                                    <span>Hi, how r u dear ...?</span>
-                                                    <i>2 min ago</i>
-                                                </div>
-                                            </a>
-                                            <span className="tag green">New</span>
-                                        </li>
-                                        <li>
-                                            <a href="notifications.html" title="">
-                                                <img src="images/resources/thumb-2.jpg" alt=""/>
-                                                <div className="mesg-meta">
-                                                    <h6>Jhon doe</h6>
-                                                    <span>Hi, how r u dear ...?</span>
-                                                    <i>2 min ago</i>
-                                                </div>
-                                            </a>
-                                            <span className="tag red">Reply</span>
-                                        </li>
-                                        <li>
-                                            <a href="notifications.html" title="">
-                                                <img src="images/resources/thumb-3.jpg" alt=""/>
-                                                <div className="mesg-meta">
-                                                    <h6>Andrew</h6>
-                                                    <span>Hi, how r u dear ...?</span>
-                                                    <i>2 min ago</i>
-                                                </div>
-                                            </a>
-                                            <span className="tag blue">Unseen</span>
-                                        </li>
-                                        <li>
-                                            <a href="notifications.html" title="">
-                                                <img src="images/resources/thumb-4.jpg" alt=""/>
-                                                <div className="mesg-meta">
-                                                    <h6>Tom cruse</h6>
-                                                    <span>Hi, how r u dear ...?</span>
-                                                    <i>2 min ago</i>
-                                                </div>
-                                            </a>
-                                            <span className="tag">New</span>
-                                        </li>
-                                        <li>
-                                            <a href="notifications.html" title="">
-                                                <img src="images/resources/thumb-5.jpg" alt=""/>
-                                                <div className="mesg-meta">
-                                                    <h6>Amy</h6>
-                                                    <span>Hi, how r u dear ...?</span>
-                                                    <i>2 min ago</i>
-                                                </div>
-                                            </a>
-                                            <span className="tag">New</span>
-                                        </li>
-                                    </ul>
-                                    <a href="messages.html" title="" className="more-mesg">view more</a>
-                                </div>
+                                <a id = "dropdowns2" onClick={toggleDropdown} ><i
+                                    className="ti-comment" ></i><span>12</span>
+                                </a>
+                                {dropdown ? (
+                                    <div className="dropdowns1">
+                                        <span>Messages</span>
+                                        {texted.map((t) => (
+                                        <ul className="drops-menu1">
+                                            <li>
+                                                <a href="notifications.html" title="">
+                                                    <img className="img-message-friend" src={t.toUser.id == account.id ? t.fromUser.avatar : t.toUser.avatar} alt=""/>
+                                                    <div className="mesg-meta">
+                                                        <h6>{t.toUser.id == account.id ? t.fromUser.firstName : t.toUser.firstName} {t.toUser.id == account.id ? t.fromUser.lastName : t.toUser.lastName}</h6>
+                                                        <span>{t.content}</span>
+                                                        <i>{calculateTimeChat(t.time)}</i>
+                                                    </div>
+                                                </a>
+                                                <span className="tag">New</span>
+                                            </li>
+                                        </ul>
+                                        ))}
+                                        <div id="div-message-view-more">
+                                            <a href="messages.html" title="" className="more-mesg">view more</a>
+                                        </div>
+                                    </div>
+                                ) : (null)}
                             </li>
                             <li><a href="#" title="Languages" data-ripple=""><i className="fa fa-globe"></i></a>
                                 <div className="dropdowns languages">
@@ -430,10 +428,10 @@ const Header = () => {
                                 </div>
                             </li>
                         </ul>
-                        <div>
-                            <div className="user-img" style={{transform: 'translateY(-10px)'}}>
+                        <div id="div-img-profile">
+                            <div className="user-img" >
                                 <img
-                                    src={`images/profile/` + account.avatar || `https://inkythuatso.com/uploads/thumbnails/800/2023/03/10-anh-dai-dien-trang-inkythuatso-03-15-27-10.jpg`}
+                                    src={account.avatar}
                                     id="img-profile" onClick={toggleUserSetting} alt=""/>
                             </div>
                             <div className={`user-setting ${userSettingActive ? 'active' : ''}`}>
