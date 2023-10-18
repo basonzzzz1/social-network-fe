@@ -2,11 +2,16 @@ import React, {useEffect, useState} from 'react';
 import Service from "../services/Service";
 import $ from 'jquery';
 import {Link, Navigate} from 'react-router-dom';
+import SockJS from "sockjs-client";
+import Stomp from "stompjs";
+import {toast} from "react-toastify";
+import stompClient from "sockjs-client/lib/transport/iframe";
 const Header = () => {
         const [account, setAccount] = useState({});
         const [userSettingActive, setUserSettingActive] = useState(false);
         const [load, setLoad] = useState(true);
         const [dropdown, setDropdown] = useState(false);
+        const [connect, setConnect] = useState(false);
         const [texted, setTexted] = useState([]);
         useEffect(() => {
             Service.profile().then((response) => {
@@ -31,6 +36,24 @@ const Header = () => {
         localStorage.removeItem("idAccount");
         localStorage.removeItem("token");
         localStorage.removeItem("account");
+    }
+    const initializeWebSocketConnection = () => {
+        const ws = new SockJS("http://localhost:8080/ws");
+        const stompClient = Stomp.over(ws);
+        stompClient.connect({}, (frame) => {
+            toast.success("connect to socket successfly !")
+            setConnect(true);
+            stompClient.subscribe('"http://localhost:8080/user/queue/position-update"', (message) => {
+                toast.success(message.body);
+            //     viết api /allFriend/{id}" ở đây
+            //     /all/{id}
+            //     "/friend"
+            });
+        });
+    }
+    const sendMessage = (message) => {
+        stompClient.send("/app/message", {}, JSON.stringify(message));
+        initializeWebSocketConnection()
     }
     function calculateTimeChat(createdAt) {
         const currentTime = new Date();
