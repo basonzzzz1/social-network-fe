@@ -1,15 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
-import Service from "../services/Service";
+import Service from "../../services/Service";
 import {Link, Navigate} from "react-router-dom";
 import * as Yup from "yup";
 import _ from 'lodash';
 import {ErrorMessage, Field, Form, Formik} from "formik";
 import {toast} from "react-toastify";
 import {useDispatch, useSelector} from "react-redux";
-import {updateUserToken} from "../redux/actions/userActions";
-import UserService from "../services/UserService";
-import LeftSideBarAbout from "./LeftSideBarAbout";
+import {updateUserToken} from "../../redux/actions/userActions";
+import UserService from "../../services/UserService";
+import LeftSideBarAbout from "../home/LeftSideBarAbout";
 const EditProfile = () => {
+    const [check, setCheck] = useState(true);
     const [account, setAccount] = useState({});
     const [load, setLoad] = useState(true);
     const [selectedGender, setSelectedGender] = useState(true);
@@ -18,6 +19,7 @@ const EditProfile = () => {
 
     const [user, setUser] = useState({});
     const [isEdit, setIsEdit] = useState(false);
+    const [isEditPW, setIsEditPW] = useState(false);
 
     // Create refs for input elements
     const inputRef = useRef();
@@ -38,42 +40,42 @@ const EditProfile = () => {
             setLoad(false);
         });
     }, [load]);
+    const setCheckEditPassWord = () => {
+        setCheck(false)
+    }
 
-    const editProfile = (id) => {
-        let data = new FormData();
-        let firstName = inputRef.current.value;
-        let lastName = lastNameRef.current.value;
-        let email = emailRef.current.value;
-        let phone = phoneRef.current.value;
+    const setCheckEditInfor = () => {
+        setCheck(true)
+    }
+    const editPassword = async () => {
+        try {
+            const response = await UserService.editPassword(user);
+            console.log(response.data);
+            const updatedUser = {...userToken, ...response.data};
+            localStorage.setItem("userToken", JSON.stringify(updatedUser));
+            dispatch(updateUserToken(response.data));
+            toast.success("Edited Password successfully !");
+            setCheck(true)
+        } catch (error) {
+            console.error("Error:", error);
+            toast.error("Editing Password failed !");
+        }
+    }
 
-        data.append("file", "");
-        data.append('firstName', firstName);
-        data.append('lastName', lastName);
-        data.append('email', email);
-        data.append('gender', selectedGender);
-        const birthday = dateOfBirthRef.current.value;
-        data.append('birthday', birthday);
-        data.append('phone', phone);
-
-        Service.editProfile(data, account.id).then((response) => {
-            alert("Thành công!");
-            console.log(response);
-        }).catch((error) => {
-            console.log(error);
-            alert("Thất bại!");
-        });
-    };
-
-
-    /*const getUserById = () => {
-        UserService.getUserById(userToken.id)
-            .then((response) => {
-                setUser(response.data);
-            })
-            .catch((error) => {
-                console.log(error);
-            })
-    }*/
+    const validateSchemaEditPassword = Yup.object().shape({
+        oPassword: Yup.string()
+            .required("Password cannot be blank")
+            .notOneOf([' '], 'Password must not contain spaces'),
+        nPassword: Yup.string()
+            .required('Password cannot be blank')
+            .min(6, 'Password must contain at least 6 characters')
+            .max(32, 'Password must contain a maximum of 32 characters')
+            .notOneOf([' '], 'Password must not contain spaces'),
+        confirm: Yup.string()
+            .oneOf([Yup.ref('nPassword'), null], 'Confirmation password must be the same as the password')
+            .required('Password cannot be blank')
+            .notOneOf([' '], 'Password must not contain spaces'),
+    })
     const getUserById = async () => {
         try {
             const response = await UserService.getUserById(userToken.id);
@@ -91,32 +93,10 @@ const EditProfile = () => {
     useEffect(() => {
         getUserById();
     }, []);
-
-    /*const editUser = () => {
-        UserService.editUser(user)
-            .then((response) => {
-                console.log(response.data);
-                let user = JSON.parse(localStorage.getItem("userToken"));
-                user = {...user, ...response.data};
-                localStorage.setItem('userToken', JSON.stringify(user));
-                dispatch(updateUserToken(response.data));
-                toast.success("Edited information successfully !")
-                setIsEdit(true);
-            })
-            .catch((error) => {
-                console.log(error);
-                toast.error("Editing information failed !");
-            })
-    }*/
     const editUser = async () => {
         try {
             const response = await UserService.editUser(user);
             console.log(response.data);
-
-            /*let user = JSON.parse(localStorage.getItem("userToken"));
-            user = {...user, ...response.data};
-            localStorage.setItem('userToken', JSON.stringify(user));
-            dispatch(updateUserToken(response.data));*/
             const updatedUser = {...userToken, ...response.data};
             localStorage.setItem("userToken", JSON.stringify(updatedUser));
             dispatch(updateUserToken(response.data));
@@ -205,7 +185,7 @@ const EditProfile = () => {
                 </div>
             </section>
             {/*// <!-- top area -->*/}
-
+            {check ? (
             <section>
                 <div className="gap gray-bg">
                     <div className="container-fluid">
@@ -214,7 +194,19 @@ const EditProfile = () => {
                                 <div className="row" id="page-contents">
                                     <div className="col-lg-3">
                                         <aside className="sidebar static">
-                                            <LeftSideBarAbout/>
+                                            <div className="widget">
+                                                <h4 className="widget-title">Edit info</h4>
+                                                <ul className="naves">
+                                                    <li>
+                                                        <i className="ti-info-alt"></i>
+                                                        <Link to={"#"} onClick={() => setCheckEditInfor()}>Basic info</Link>
+                                                    </li>
+                                                    <li>
+                                                        <i className="ti-lock"></i>
+                                                        <Link to={"#"} onClick={() => setCheckEditPassWord()}>change password</Link>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </aside>
                                     </div>
                                     <div className="col-lg-8">
@@ -323,7 +315,89 @@ const EditProfile = () => {
                         </div>
                     </div>
                 </div>
-            </section>
+            </section>):
+                ( <section>
+                    <div className="gap gray-bg">
+                        <div className="container-fluid">
+                            <div className="row">
+                                <div className="col-lg-12">
+                                    <div className="row" id="page-contents">
+                                        <div className="col-lg-3">
+                                            <aside className="sidebar static">
+                                                <div className="widget">
+                                                    <h4 className="widget-title">Edit info</h4>
+                                                    <ul className="naves">
+                                                        <li>
+                                                            <i className="ti-info-alt"></i>
+                                                            <Link to={"#"} onClick={() => setCheckEditInfor()}>Basic info</Link>
+                                                        </li>
+                                                        <li>
+                                                            <i className="ti-lock"></i>
+                                                            <Link to={"#"} onClick={() => setCheckEditPassWord()}>change password</Link>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </aside>
+                                        </div>
+                                        <div className="col-lg-8">
+                                            <div className="central-meta">
+                                                <div className="editing-info">
+                                                    <h5 className="f-title"><i className="ti-lock"></i>Change Password</h5>
+                                                    <Formik initialValues={
+                                                        {
+                                                            oPassword: '',
+                                                            nPassword: '',
+                                                            confirm: ''
+                                                        }
+                                                    }
+                                                            validationSchema={validateSchemaEditPassword}
+                                                            onSubmit={(values) => {
+                                                                editPassword();
+                                                                console.log(values);
+                                                            }}
+                                                    >
+                                                        <Form>
+                                                            <div className="form-group">
+                                                                <Field type="password" name="oPassword" required="required" value={""}
+                                                                       onInput={changeInputEdit}/>
+                                                                <ErrorMessage name="oPassword" component="div" className="text-danger"/>
+                                                                <label className="control-label" htmlFor="input">Old
+                                                                    password</label><i className="mtrl-select"></i>
+                                                            </div>
+                                                            <div className="form-group">
+                                                                <Field type="password" name="nPassword" required="required" value={""}
+                                                                       onInput={changeInputEdit}/>
+                                                                <ErrorMessage name="nPassword" component="div" className="text-danger"/>
+                                                                <label className="control-label" htmlFor="input">New
+                                                                    password</label><i className="mtrl-select"></i>
+                                                            </div>
+                                                            <div className="form-group">
+                                                                <Field type="password" name="confirm" required="required" value={""}
+                                                                       onInput={changeInputEdit}/>
+                                                                <ErrorMessage name="confirm" component="div" className="text-danger"/>
+                                                                <label className="control-label" htmlFor="input">Confirm
+                                                                    password</label><i className="mtrl-select"></i>
+                                                            </div>
+                                                            <div className="submit-btns">
+                                                                <Link to={"/profile/about"}
+                                                                      className="mtr-btn"><span>Cancel</span>
+                                                                </Link>
+                                                                <span> </span>
+                                                                <button type="submit" className="mtr-btn">
+                                                                    <span>Update</span>
+                                                                </button>
+                                                            </div>
+                                                        </Form>
+                                                    </Formik>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>)}
             {isEdit && <Navigate to="/about"/>}
         </div>
     );

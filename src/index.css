@@ -570,7 +570,7 @@ code {
   margin-left: 20px;
 }
 #img-profile{
-  transform: translateX(1120px) translateY(-35px);
+  transform: translateX(1322px) translateY(-22px);
   width: 42px;
   height: 42px;
   margin-top: -20px;
@@ -580,6 +580,9 @@ code {
   margin-bottom: -50px;
   padding: 10px;
 }
+.top-area{
+  transform: translateX(-200px) ;
+}
 
 .top-area .er-imgus {
   cursor: pointer;
@@ -587,6 +590,7 @@ code {
   vertical-align: middle;
   position: relative;
   line-height: 60px;
+  
 }
 .top-area .user-img > span.status {
   bottom: 10px;
@@ -618,13 +622,110 @@ code {
   visibility: hidden;
   line-height: initial;
   border: 1px solid #e1e8ed;
+  transform: translateX(-30px) translateY(20px) ;
+}
+#search-form-header{
+  border: hidden;
+  background-color: white;
+  transform: translateX(-9px) translateY(0px) ;
+  color: grey;
+}
+#search-form-header-modal{
+  border: 1px solid grey;
+  transform: translateX(-9px) translateY(0px) ;
+  border-radius: 14px;
+  height: 30px;
+}
+#div-search-list-modal{
+  margin-left: 30px;
+}
+.menu-button-cmt{
+  border: hidden;
+
+  background-color: white;
+  color: #595757;
+  transform: translateX(540px) translateY(-20px);
+  position: absolute;
+}
+.menu-div-cmt{
+  transform: translateX(390px) translateY(-30px);
+  /*background-color: #262323;*/
+  /*border: 1px solid #0e0e0e;*/
+}
+.menu-cmt{
+  width: 150px;
+  display: block;
+  position: absolute;
+  border: 1px solid #b2b2b2;
+  background-color: white;
+  border: hidden;
+  border-radius: 5px;
+}
+.button-menu-1{
+  /*background-color: white;*/
+  border: hidden;
+  width: 100%;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  padding-right: 64px;
+
+}
+#update-cmt{
+  border: hidden;
+  width: 100%;
+
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+#update-cmt{
+  border: hidden;
+  width: 100%;
+
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+.save-cmt-post{
+  border: hidden;
+  background-color: #0a98dc ;
+  border-radius: 10px;
+  color: white;
+  transform: translateX(520px) translateY(-35px);
+}
+.sent-icon {
+  transform: translateX(-10px) translateY(-10px);
+}
+.friend-image-avatar-modal{
+  width: 50px;
+  height: 50px;
+  border: 2px solid grey;
+}
+#cancel-request{
+  background-color: white;
+  color: black;
+}
+#search-form-modal{
+  border: hidden;
+  background-color: white;
+  transform: translateX(-45px) translateY(0px) ;
+  color: grey;
+}
+#input-search-hearder{
+  height: 32px;
+  border-radius: 14px;
+  border: 1px solid grey;
 }
 
 .user-setting.active {
   opacity: 1;
   visibility: visible;
 }
-
+#form-search-list-friend{
+  position: absolute;
+  width: 400px;
+}
+#fiend-from-123{
+  width: 400px;
+}
 .user-setting > a {
   display: inline-block;
   font-size: 13px;
@@ -692,6 +793,62 @@ code {
   margin: 4px;
   transform: translateX(-27px) translateY(220px);
 
+}
+.modal-dialog-1{
+  transform: translateX(365px) ;
+  width: 800px;
+margin-top: 60px;
+}
+.chatting-area{
+  overflow-x: scroll;
+  width: 600px;
+}
+.message-text-container{
+  position: fixed;
+  transform:  translateY(-35px);
+}
+.messenger-avatar-modal{
+  width: 43px;
+  height: 43px;
+  border: 2px solid grey;
+}
+.content-and-name{
+  display: block;
+  height: 45px;
+}
+.name-user-modal{
+  color: black;
+}
+.content-user-modal{
+  color: grey;
+}
+.li-peoples-modal{
+  border-top: 1px solid #d5d5d5;
+  /*border-right: 1px solid #d5d5d5;*/
+}
+.peoples{
+  border-right:1px solid #d5d5d5 ;
+}
+.avatar-from-user-modal{
+  width: 33px;
+  height: 33px;
+  border: 1px solid grey;
+}
+.img-modal-touser{
+  height: 48px;
+  width: 48px;
+}
+#send-message{
+  transform: translateX(490px) translateY(-42px);
+  width: 50px;
+  height: 30px;
+  border-radius: 10px;
+}
+#home-nav-bar{
+  transform: translateX(-100px) translateY(0px);
+}
+.li-nav-bar-icon{
+width: 200px;
 }
 #likeok{
   color: red;

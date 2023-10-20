@@ -1,46 +1,17 @@
 import axios from "axios";
 import { toast } from 'react-toastify';
 import {
+    ADD_COMMENT_API,
+    API_ADD_FRIEND_REQUEST, API_ALL_FRIEND_REQUEST,
+    API_SEARCH_NAME, COMMENT_DELETE_API, COMMENT_UPDATE_API, GET_ALL_COMMENT_API,
     LIKE_API,
-    LIKE_DELETE_API, LIST_MESSAGE_BY_TIME_ACCOUNT,
+    LIKE_DELETE_API, LIST_MESSAGE_BY_FRIEND, LIST_MESSAGE_BY_TIME_ACCOUNT,
     LOGIN_API,
     POST_API, POST_DELETE_API, POST_FOLLOW_API, POST_STATUS_API, POST_UPDATE_API, POST_USE_API,
-    REGISTER_API,
+    REGISTER_API, SEND_MESSAGE,
     USER_EDIT_PROFILE_API,
     USER_PROFILE_API
 } from "../api/api";
-// import SockJS from 'sockjs-client';
-// import Stomp from 'stompjs';
-// const socket = new SockJS('http://localhost:8080/ws');
-// const stompClient = Stomp.over(socket);
-// stompClient.connect({}, (frame) => {
-//     console.log('Connected to WebSocket');
-//
-//     // Lắng nghe tin nhắn từ máy chủ
-//     stompClient.subscribe('/topic/like', (message) => {
-//         console.log('Received like message:', message.body);
-//         // Xử lý tin nhắn like ở đây
-//         // Ví dụ: cập nhật trạng thái like trong danh sách bài viết
-//         // Cần có một cơ chế để xác định bài viết được like và người dùng thực hiện like
-//     });
-//
-//     stompClient.subscribe('/topic/deleteLike', (message) => {
-//         console.log('Received deleteLike message:', message.body);
-//         // Xử lý tin nhắn deleteLike ở đây
-//         // Ví dụ: cập nhật trạng thái deleteLike trong danh sách bài viết
-//     });
-// });
-//
-// // Sau khi thực hiện các hoạt động liên quan đến like, bạn có thể gửi tin nhắn WebSocket để thông báo về sự kiện like hoặc deleteLike.
-// // Dưới đây là một ví dụ gửi tin nhắn like:
-// const likePost = (postId) => {
-//     stompClient.send('/app/like', {}, JSON.stringify({ postId }));
-// };
-//
-// // Và gửi tin nhắn deleteLike:
-// const deleteLike = (likeId) => {
-//     stompClient.send('/app/deleteLike', {}, JSON.stringify({ likeId }));
-// };
 const Service = {
     login: (account) => {
         return new Promise((resolve, reject) => {
@@ -80,6 +51,7 @@ const Service = {
                 });
         });
     },
+
     createPost: (formData) => {
         console.log(formData);
         return new Promise((resolve, reject) => {
@@ -118,6 +90,50 @@ const Service = {
             axios.request(config)
                 .then(response => {
                     toast.success("Update Post Success !");
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    toast.error(err)
+                    reject(err)
+                });
+        });
+    },
+    sendMessage: (id,data) => {
+        return new Promise((resolve, reject) => {
+            let config = {
+                method: 'post',
+                maxBodyLength: Infinity,
+                url: SEND_MESSAGE+id,
+                data: data,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            };
+            axios.request(config)
+                .then(response => {
+                    toast.success("Send Message Success !");
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    toast.error(err)
+                    reject(err)
+                });
+        });
+    },
+    getMessageByFriend: (id,account) => {
+        return new Promise((resolve, reject) => {
+            let config = {
+                method: 'post',
+                maxBodyLength: Infinity,
+                url: LIST_MESSAGE_BY_FRIEND+id,
+                data: account,
+                headers: {
+                    'Content-Type': 'application/json',
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                },
+            };
+            axios.request(config)
+                .then(response => {
                     resolve(response.data);
                 })
                 .catch(function (err) {
@@ -250,6 +266,56 @@ const Service = {
                 });
         });
     },
+    searchName: (name) => {
+        return new Promise((resolve, reject) => {
+            axios.get(API_SEARCH_NAME+name,{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    toast.success("search successfly !");
+                    resolve(response);
+                })
+                .catch(function (err) {
+                    toast.error(err);
+                    reject(err);
+                });
+        });
+    },
+    addFriendRequest: (data) => {
+        return new Promise((resolve, reject) => {
+            axios.post(API_ADD_FRIEND_REQUEST,data,{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    toast.success("sent friend request successfully !");
+                    resolve(response);
+                })
+                .catch(function (err) {
+                    toast.error(err);
+                    reject(err);
+                });
+        });
+    },
+    allFriendRequest: () => {
+        return new Promise((resolve, reject) => {
+            axios.get(API_ALL_FRIEND_REQUEST+localStorage.getItem("idAccount"),{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    resolve(response);
+                })
+                .catch(function (err) {
+                    toast.error(err);
+                    reject(err);
+                });
+        });
+    },
     deletePost: (id) => {
         return new Promise((resolve, reject) => {
             axios.post(POST_DELETE_API+id, {
@@ -316,6 +382,76 @@ const Service = {
                 })
                 .catch(function (err) {
                     toast.error(err)
+                    reject(err)
+                });
+        });
+    },
+    getAllComment: () => {
+        return new Promise((resolve, reject) => {
+            axios.get(GET_ALL_COMMENT_API,{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+
+    deleteComment: (id) => {
+        return new Promise((resolve, reject) => {
+            let config = {
+                method: 'POST',
+                url: COMMENT_DELETE_API+id,
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                },
+            };
+            axios.request(config)
+                .then(response => {
+                    resolve(response);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+
+
+    // Thông qua axios.post, bạn đang thực hiện một POST request đến ADD_COMMENT_API và truyền dữ liệu bình luận thông qua biến comment.
+    addComment: (comment) => {
+        return new Promise((resolve, reject) => {
+            axios.post(ADD_COMMENT_API,comment,{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+
+                }
+            })
+                .then(response => {
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+
+    updateComment: (comment) => {
+        return new Promise((resolve, reject) => {
+            axios.post(COMMENT_UPDATE_API,comment,{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+
+                }
+            })
+                .then(response => {
+                    resolve(response.data);
+                })
+                .catch(function (err) {
                     reject(err)
                 });
         });

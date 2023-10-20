@@ -1,8 +1,8 @@
 import React from 'react';
 import {BrowserRouter as Router, Routes, Route, Navigate} from "react-router-dom";
-import Header from "../Header";
-import Footer from "../Footer";
-import Body from "../Body";
+import Header from "../home/Header";
+import Footer from "../home/Footer";
+import Body from "../home/Body";
 import ProfilePage from "./ProfilePage";
 
 const HomePage = () => {

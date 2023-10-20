@@ -1,90 +1,87 @@
 import React, {useEffect, useState} from 'react';
+import Service from "../../services/Service";
 import {Link} from "react-router-dom";
-import Service from "../services/Service";
-import moment from 'moment';
-import SockJS from 'sockjs-client';
-import Stomp from 'stompjs';
-import {toast } from 'react-toastify';
-import {storage} from "../Config/firebase";
-import {ref, uploadBytes, getDownloadURL} from "firebase/storage";
+import moment from "moment/moment";
+import {useDispatch, useSelector} from "react-redux";
+import {toast} from "react-toastify";
+import PostService from "../../services/PostService";
+import {getDownloadURL, ref, uploadBytes} from "firebase/storage";
+import {storage} from "../../Config/firebase";
+import UserService from "../../services/UserService";
+import {updateUserToken} from '../../redux/actions/userActions';
 import {v4} from "uuid";
-import PostService from "../services/PostService";
-import {useSelector} from "react-redux";
-
-
 const imageMimeType = /image\/(png|jpg|jpeg)/i;
-const Body = () => {
-    const [menu, setMenu] = useState(false);
-    const [post, setPost] = useState({});
+const Profile = () => {
     const [file, setFile] = useState(null);
+    const [fileDataURL, setFileDataURL] = useState(null);
+    const [account, setAccount] = useState({});
+    const [load, setLoad] = useState(true);
     const [posts, setPosts] = useState([]);
-    const [status, setStatus] = useState([]);
     const [postFull, setPostFull] = useState([]);
     const [like, setLike] = useState([]);
-    const [account, setAccount] = useState([]);
-    const [load, setLoad] = useState(true);
-    const [selectedImage, setSelectedImage] = useState(null);
+    const [menu, setMenu] = useState(false);
+    const [status, setStatus] = useState([]);
+    const [post, setPost] = useState({});
     const [postContent, setPostContent] = useState("");
+    const [selectedImage, setSelectedImage] = useState(null);
     const [selectedImageUpdate, setSelectedImageUpdate] = useState(null);
-    const socket = new SockJS('http://localhost:8080/ws');
-    const stompClient = Stomp.over(socket);
-    const [fileDataURL, setFileDataURL] = useState(null);
+    const [checkFindImage, setCheckFindImage] = useState(false);
     const userToken = useSelector((state) => state.userToken);
-    stompClient.connect({}, (frame) => {
-        alert('Connected to WebSocket');
-        // Lắng nghe tin nhắn từ máy chủ
-        stompClient.subscribe('/topic/like', (message) => {
-            console.log('Received like message:', message.body);
-            alert("lắng nghe")
-            Service.findAllLike().then((response) => {
-                setLike(response)
-            }).catch((error) => {
-                // alert("lỗi !")
-            })
-            // Xử lý tin nhắn like ở đây
-            // Ví dụ: cập nhật trạng thái like trong danh sách bài viết
-            // Cần có một cơ chế để xác định bài viết được like và người dùng thực hiện like
-        });
-        stompClient.subscribe('/topic/deleteLike', (message) => {
-            console.log('Received deleteLike message:', message.body);
-            alert("lắng nghe")
-            Service.findAllPost().then((response) => {
-                const sortedPosts = response.sort((a, b) => {
-                    return new Date(b.time) - new Date(a.time);
-                });
-                setPosts(sortedPosts)
-                console.log(response)
-            }).catch((error) => {
+    const dispatch = useDispatch();
+    const editAvatar = async (event) => {
+        try {
+            if (event.target.files[0] == null) {
+                return;
+            }
 
-            })
-            Service.findAllLike().then((response) => {
-                setLike(response)
-            }).catch((error) => {
-                // alert("lỗi !")
-            })
-            // Xử lý tin nhắn deleteLike ở đây
-            // Ví dụ: cập nhật trạng thái deleteLike trong danh sách bài viết
-        });
-    });
-// Sau khi thực hiện các hoạt động liên quan đến like, bạn có thể gửi tin nhắn WebSocket để thông báo về sự kiện like hoặc deleteLike.
-// Dưới đây là một ví dụ gửi tin nhắn like:
-//         const likePost1 = (postId) => {
-//             stompClient.send('/app/like', {}, JSON.stringify({ postId }));
-//         };
+            const imageRef = ref(storage, `images/${event.target.files[0].name + v4()}`);
+            const snapshot = await uploadBytes(imageRef, event.target.files[0]);
+            const url = await getDownloadURL(snapshot.ref);
 
-// Và gửi tin nhắn deleteLike:
-//         const deleteLike = (likeId) => {
-//             stompClient.send('/app/deleteLike', {}, JSON.stringify({ likeId }));
-//         };
+            const user = {id: userToken.id, avatar: url};
+
+            const response = await UserService.editAvatar(user);
+
+            toast.success("Upload Successfully!");
+            toast.success("Edit Avatar Successfully!");
+
+            const updatedUser = {...userToken, ...response.data};
+            localStorage.setItem("userToken", JSON.stringify(updatedUser));
+            dispatch(updateUserToken(response.data));
+            setLoad(true);
+        } catch (error) {
+            console.error("Error:", error);
+            toast.error("Edit Avatar failed!");
+        }
+    }
+    const editThumbnail = async (event) => {
+        try {
+            if (event.target.files[0] == null) {
+                return;
+            }
+            const imageRef = ref(storage, `images/${event.target.files[0].name + v4()}`);
+            const snapshot = await uploadBytes(imageRef, event.target.files[0]);
+            const url = await getDownloadURL(snapshot.ref);
+            const user = {id: userToken.id, thumbnail: url};
+            const response = await UserService.editThumbnail(user);
+            toast.success("Upload successful!");
+            toast.success("Edit Thumbnail Successfully!");
+            const updatedUser = {...userToken, ...response.data};
+            localStorage.setItem("userToken", JSON.stringify(updatedUser));
+            dispatch(updateUserToken(response.data));
+            setLoad(true);
+        } catch (error) {
+            console.error("Error:", error);
+            toast.error("Edit Thumbnail failed!");
+        }
+    }
     useEffect(() => {
-        Service.findAllPost().then((response) => {
-            const filteredPosts = response.filter((post) => post.status.name === "public" || post.status.name === "friend" || post.loggedInUser.id === localStorage.getItem("idAccount"));
-            const sortedPosts = filteredPosts.sort((a, b) => new Date(b.time) - new Date(a.time));
-            setPosts(sortedPosts);
-            setLoad(false);
-        }).catch((error) => {
-            console.log(error);
-        });
+        Service.profile().then((response)=>{
+            setAccount(response.data)
+            console.log(response.data)
+        }).catch((error)=>{
+            setLoad(false)
+        })
     }, [load]);
 
     useEffect(() => {
@@ -98,44 +95,49 @@ const Body = () => {
                 }
             }
             fileReader.readAsDataURL(file);
-        }
-        return () => {
-            isCancel = true;
-            if (fileReader && fileReader.readyState === 1) {
-                fileReader.abort();
+            return () => {
+                isCancel = true;
+                if (fileReader && fileReader.readyState === 1) {
+                    fileReader.abort();
+                }
             }
+        }else{
+            setFileDataURL(selectedImageUpdate);
         }
-    }, [file]);
+
+
+    }, [file,load]);
 
     useEffect(() => {
-        Service.getAllStatus().then((response) => {
-            setStatus(response.data);
-        }).catch((error) => {
-            console.log(error)
-        })
-    }, [load]);
-    useEffect(() => {
-        Service.findAllLike().then((response) => {
-            setLike(response)
+        Service.findAllPost().then((response) => {
+            const filteredPosts = response.filter((post) => post.loggedInUser.id == localStorage.getItem("idAccount"));
+            const sortedPosts = filteredPosts.sort((a, b) => {
+                return new Date(b.time) - new Date(a.time);
+            });
+            setPosts(sortedPosts);
+            console.log(response);
+            setLoad(false);
         }).catch((error) => {
             console.log(error);
         })
     }, [load]);
     useEffect(() => {
-        const updatedPosts = posts.map((post) => {
-            const countLike = like.filter((likedPost) => likedPost.post.id === post.id).length;
-            return {
-                status: post.status,
-                id: post.id,
-                loggedInUser: post.loggedInUser,
-                content: post.content,
-                time: post.time,
-                image: post.image,
-                countLike: countLike
-            };
-        });
-        setPostFull(updatedPosts);
-    }, [posts]);
+        Service.getAllStatus().then((response) => {
+            console.log(response);
+            setStatus(response.data);
+        }).catch((error) => {
+
+        })
+    }, []);
+    useEffect(() => {
+        Service.findAllLike().then((response) => {
+            setLike(response)
+            setLoad(false)
+        }).catch((error) => {
+            alert("lỗi !")
+        })
+    }, [load]);
+
     useEffect(() => {
         if (postContent != "" || selectedImage != null) {
             document.getElementById("post-post").style.backgroundColor = "#38B6FF";
@@ -145,35 +147,31 @@ const Body = () => {
             document.getElementById("post-post").style.color = "#888888";
         }
     }, [postContent,selectedImage]);
-    const logout = () => {
-        localStorage.removeItem("idAccount");localStorage.removeItem("token");localStorage.removeItem("account");
-    }
-    // const createPost = () => {
-    //     let file = document.getElementById("file1").files[0];
-    //     let data = new FormData();
-    //     let content = document.getElementById("post-content").value;
-    //     let statusId = document.getElementById("status-select").value;
-    //     data.append("content", content);
-    //     data.append("file", file);
-    //     data.append("statusId", statusId);
-    //     if (postContent !== "") {
-    //         Service.createPost(data).then((response) => {
-    //             document.getElementById("post-content").value = "";
-    //             setPostContent("");
-    //             setSelectedImage(null)
-    //             document.getElementById("selectedImage").style.display = 'none';
-    //             setLoad(true);
-    //             const closeModalButton = document.getElementById("closeModalButton");
-    //             if (closeModalButton) {
-    //                 closeModalButton.click();
-    //             }
-    //             remoteFile()
-    //         }).catch((error) => {
-    //             alert("thất cmn bại !")
-    //         })
-    //     } else {
-    //     }
-    // }
+
+
+    useEffect(() => {
+        let newPostFull = {};
+        let arrPost = [];
+        for (let i = 0; i < posts.length; i++) {
+            let countLike = 0;
+            for (let j = 0; j < like.length; j++) {
+                if (posts[i].id == like[j].post.id) {
+                    countLike++
+                }
+            }
+            newPostFull = {
+                status: posts[i].status,
+                id: posts[i].id,
+                loggedInUser: posts[i].loggedInUser,
+                content: posts[i].content,
+                time: posts[i].time,
+                image: posts[i].image,
+                countLike: countLike
+            }
+            arrPost.push(newPostFull);
+        }
+        setPostFull(arrPost)
+    }, [posts]);
     const changeImage = (event) => {
         const file = event.target.files[0];
         console.log(file);
@@ -184,6 +182,7 @@ const Body = () => {
         setSelectedImageUpdate(file);
         setSelectedImage(file)
         document.getElementById("selectedImage").style.display = 'block';
+        document.getElementById("selectedImageUpdate").style.display = 'block';
         setFile(file);
     }
     const createPost = async () => {
@@ -192,25 +191,23 @@ const Body = () => {
                 let content = document.getElementById("post-content").value;
                 let statusId = document.getElementById("status-select").value;
                 const newP = {content : content,
-                                               status : {id:statusId} ,
+                    status : {id:statusId} ,
                     loggedInUser:{id: userToken.id}};
                 const response = await PostService.createPost(newP);
                 console.log(response.data);
-                const closeModalButton = document.getElementById("closeModalButton");
-                if (closeModalButton) {
-                    closeModalButton.click();
-                }
+                 document.getElementById("closeModalButton").click();
                 toast.success('Create Post Successfully!');
                 setPostContent("");
                 setLoad(!load);
                 return;
             }else {
-                alert(2)
                 let content = document.getElementById("post-content").value;
                 let statusId = document.getElementById("status-select").value;
+                document.getElementById("loader").style.display = 'block';
                 const imageRef = ref(storage, `images/${file.name + v4()}`);
                 const snapshot = await uploadBytes(imageRef, file);
                 const url = await getDownloadURL(snapshot.ref);
+                document.getElementById("loader").style.display = 'none';
                 const closeModalButton = document.getElementById("closeModalButton");
                 setSelectedImage(file)
                 const newP = {content : content,
@@ -223,7 +220,7 @@ const Body = () => {
                 if (closeModalButton) {
                     closeModalButton.click();
                 }
-                remoteFile()
+                remoteFile();
                 toast.success('Create Post Successfully!');
                 setPostContent("");
                 setFile(null);
@@ -235,40 +232,104 @@ const Body = () => {
             toast.error('Error while creating the post.');
         }
     }
-    const handlePostContentChange = (e) => {
-        setPostContent(e.target.value);
-    }
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                setSelectedImage(reader.result);
-                setPostContent(e.target.value);
-                document.getElementById("selectedImage").style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setSelectedImage(null);
-            document.getElementById("selectedImage").style.display = 'none';
-        }
-    };
-    const handleFileChangeUpdate = (e) => {
-        const file = e.target.files[0];
-        console.log(file);
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                setSelectedImageUpdate(reader.result);
-                setPostContent(e.target.value);
+    const findByPost = (id) => {
+        Service.findByPost(id).then((response) => {
+            setPost(response)
+            document.getElementById("idPostModal").value = response.id;
+            document.getElementById("update-post-content").value = response.content;
+            document.getElementById("status-select-update").value = response.status.id;
+            if(response.image == null || response.image == "" || response.image == undefined){
+                setCheckFindImage(false)
+            }else{
                 document.getElementById("selectedImageUpdate").style.display = 'block';
+                setSelectedImageUpdate(response.image);
+                setCheckFindImage(true)
+                setFileDataURL(response.image)
+                // document.getElementById("selectedImageUpdate").style.display = 'block';
+            }
+            console.log(response);
+            setLoad(true);
+        }).catch((error) => {
+            console.log(error);
+        })
+    }
+    const updatePost = async () => {
+        let idPost = document.getElementById("idPostModal").value;
+        let content = document.getElementById("update-post-content").value;
+        let statusId = document.getElementById("status-select-update").value;
+
+        if (file != null) {
+            document.getElementById("loader").style.display = "block";
+            const imageRef = ref(storage, `images/${file.name + v4()}`);
+            const snapshot = await uploadBytes(imageRef, file);
+            const url = await getDownloadURL(snapshot.ref);
+            document.getElementById("loader").style.display = "none";
+            let post1 = {
+                id: idPost,
+                content: content,
+                status:{id: statusId},
+                image: url,
+                loggedInUser:{id:account.id}
             };
-            reader.readAsDataURL(file);
-        } else {
-            setSelectedImageUpdate(null);
-            document.getElementById("selectedImageUpdate").style.display = 'none';
+            Service.updatePost(post1)
+                .then((response) => {
+                    document.getElementById("closeModalUd").click();
+                    document.getElementById("post-content").value = "";
+                    document.getElementById("selectedImageUpdate").style.display = "none";
+                    setFileDataURL(null);
+                    setFile(null)
+                    setPostContent("");
+                    setSelectedImageUpdate(null);
+                    setLoad(true);
+                    remoteFile();
+                })
+                .catch((error) => {
+                    console.error("Thất bại!", error);
+                    alert("Thất bại!");
+                });
+        }else{
+            let post1 = {
+                id: idPost,
+                content: content,
+                status:{id: statusId},
+                image: selectedImageUpdate,
+                loggedInUser:account
+            };
+            Service.updatePost(post1)
+                .then((response) => {
+                    document.getElementById("closeModalUd").click();
+                    document.getElementById("post-content").value = "";
+                    setPostContent("");
+                    setSelectedImageUpdate(null);
+                    setLoad(true);
+                    document.getElementById("selectedImageUpdate").style.display = "none";
+                    setFileDataURL(null);
+                    setFile(null)
+                    remoteFile();
+                })
+                .catch((error) => {
+                    console.error("Thất bại!", error);
+                    alert("Thất bại!");
+                });
         }
-    };
+
+    }
+    const remoteFile = () => {
+        setSelectedImage(null);
+        setPostContent("");
+        setLoad(true);
+        document.getElementById("selectedImage").style.display = 'none';
+        document.getElementById("file1").value = "";
+    }
+    const remoteFileUpdate = () => {
+        setSelectedImageUpdate(null);
+        setPostContent("");
+        setLoad(true);
+        setFileDataURL(null)
+        document.getElementById("selectedImageUpdate").style.display = "none";
+        // document.getElementById("selectedImageUpdate").style.display = 'none';
+        document.getElementById("file2").value = "";
+    }
     const menuPost = (id) => {
         if (menu == true) {
             document.getElementById(`menu${id}`).style.display = 'none';
@@ -278,116 +339,96 @@ const Body = () => {
             document.getElementById(`menu${id}`).style.display = 'block';
         }
     }
-    // const isMenu = (id) => {
-    //     let count = 0;
-    //     document.getElementById(`menu${id}`).style.display = 'block';
-    // }
-    const findByPost = (id) => {
-        Service.findByPost(id).then((response) => {
-            setPost(response)
-            document.getElementById("idPostModal").value = response.id;
-            document.getElementById("update-post-content").value = response.content;
-            document.getElementById("status-select-update").value = response.status.id;
-            document.getElementById("file2").value = new File([''], response.image , { type: 'image/*' });
-            // let virtualImageFile = new File([''], imageFileName, { type: 'image/*' });
-            // fileInput.files = [virtualImageFile];
-            if (response.image) {
-                setSelectedImageUpdate(  response.image);
-                loadImage(response.image);
-            }
-            // document.getElementById("file2").files[0] = response.image;
-            console.log(response);
-            setLoad(true);
-        }).catch((error) => {
-            console.log(error);
-        })
-    }
-    const remoteFileUpdate = () => {
-        setSelectedImageUpdate(null); // Sửa lỗi tại đây
-        setPostContent("");
-        setLoad(true);
-        document.getElementById("selectedImageUpdate").style.display = 'none';
-        document.getElementById("file2").value = "";
-    }
-    const loadImage = (imageFileName) => {
-        const img = new Image();
-        img.src = imageFileName;
-        img.onload = () => {
-            document.getElementById("selectedImageUpdate").src = img.src;
-            document.getElementById("selectedImageUpdate").style.display = 'block';
-        };
-    }
-    const updatePost = () => {
-        let file = document.getElementById("file2").files[0];
-        let data = new FormData();
-        let idPost = document.getElementById("idPostModal").value
-        let content = document.getElementById("update-post-content").value;
-        let statusId = document.getElementById("status-select-update").value;
-        data.append("content", content);
-        data.append("file", file);
-        data.append("statusId", statusId);
-        if (postContent !== "") {
-            Service.updatePost(data,idPost).then((response) => {
-                document.getElementById("post-content").value = "";
-                setPostContent("");
-                setSelectedImageUpdate(null)
-                document.getElementById("selectedImageUpdate").style.display = 'none';
-                setLoad(true);
-                const closeModalButton = document.getElementById("closeModalButton");
-                if (closeModalButton) {
-                    closeModalButton.click();
-                }
-                remoteFile()
-            }).catch((error) => {
-                alert("thất cmn bại !")
-            })
-        } else {
-        }
-    }
-    const remoteFile = () => {
-        setSelectedImage(null);
-        setPostContent("");
-        setLoad(true);
-        document.getElementById("selectedImage").style.display = 'none';
-        document.getElementById("file1").value = "";
-    }
-    useEffect(() => {
-        Service.profile().then((response) => {
-
-            setAccount(response.data)
-        }).catch((error) => {
-            console.log(error);
-        })
-    }, []);
     const deletePost = (id) => {
         Service.deletePost(id)
             .then((response) => {
                 setLoad(true);
             })
             .catch((error) => {
-                console.error(error);
+                console.error('Lỗi khi xóa post:', error);
                 alert("lỗi xóa post");
             });
+    }
+    const handlePostContentChange = (e) => {
+        setPostContent(e.target.value);
     }
     const likePost = (post) => {
         const isLiked = like.some((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
         const likeId = isLiked ? like.find((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id)?.id : null;
         const action = isLiked ? Service.deleteLike(likeId) : Service.likePost({ account, post });
-        action
-            .then(() => {
-                stompClient.send(isLiked ? '/app/deleteLike' : '/app/like', {}, JSON.stringify({ likeId }));
-                setLoad(true);
-            })
-            .catch((error) => {
-                console.error(`Lỗi khi ${isLiked ? 'xóa like' : 'like'}:`, error);
-                alert(`Lỗi khi ${isLiked ? 'xóa like' : 'like'}:`);
-            });
+        setLoad(true);
     };
+    const logout = () => {
+        localStorage.removeItem("idAccount");
+        localStorage.removeItem("token");
+        localStorage.removeItem("userToken");
+    }
 
     return (
         <div>
             <section>
-                <div className="gap gray-bg" id="gray-bg">
+                <div className="feature-photo">
+                    <figure><img src={userToken.thumbnail} alt="" style={{width: 1536, height: 449.783}}/></figure>
+                    <div className="add-btn">
+                        <span>1.3k followers</span>
+                    </div>
+                    <form className="edit-phto">
+                        <i className="fa fa-camera-retro"></i>
+                        <label className="fileContainer">
+                            Edit Cover Photo
+                            <input type="file"
+                                   accept='.png, .jpg, .jpeg'
+                                   onChange={(event) => {
+                                       editThumbnail(event)
+                                   }}
+                            />
+                        </label>
+                    </form>
+                    <div className="container-fluid">
+                        <div className="row merged">
+                            <div className="col-lg-2 col-sm-3">
+                                <div className="user-avatar">
+                                    <figure>
+                                        <img src={userToken.avatar} alt="" style={{width: 225.667, height: 220.817}}/>
+                                        <form className="edit-phto">
+                                            <i className="fa fa-camera-retro"></i>
+                                            <label className="fileContainer">
+                                                Edit Display Photo
+                                                <input type="file"
+                                                       accept='.png, .jpg, .jpeg'
+                                                       onChange={(event) => {
+                                                           editAvatar(event)
+                                                       }}/>
+                                            </label>
+                                        </form>
+                                    </figure>
+                                </div>
+                            </div>
+                            <div className="col-lg-10 col-sm-9">
+                                <div className="timeline-info">
+                                    <ul>
+                                        <li className="admin-name">
+                                            <h5>{account.firstName} {account.lastName}</h5>
+                                            <span>{account.email}</span>
+                                        </li>
+                                        <li>
+                                            <a className="active" href="fav-page.html" title="" data-ripple="">Page</a>
+                                            <a className="" href="notifications.html" title="" data-ripple="">Notifications</a>
+                                            <a className="" href="inbox.html" title="" data-ripple="">inbox</a>
+                                            <a className="" href="insights.html" title="" data-ripple="">insights</a>
+                                            <a className="" href="fav-page.html" title="" data-ripple="">posts</a>
+                                            <Link to={"/about"} title="" data-ripple="">About</Link>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section >
+                <div className="gap gray-bg">
                     <div className="container-fluid">
                         <div className="row">
                             <div className="col-lg-12">
@@ -450,8 +491,7 @@ const Body = () => {
                                                     <li>
                                                         <div className="activity-meta">
                                                             <i>10 hours Ago</i>
-                                                            <span><a href="#"
-                                                                     title="">Commented on Video posted </a></span>
+                                                            <span><a href="#" title="">Commented on Video posted </a></span>
                                                             <h6>by <a href="time-line.html">black demon.</a></h6>
                                                         </div>
                                                     </li>
@@ -464,8 +504,7 @@ const Body = () => {
                                                     <li>
                                                         <div className="activity-meta">
                                                             <i>2 Years Ago</i>
-                                                            <span><a href="#"
-                                                                     title="">Share a video on her timeline.</a></span>
+                                                            <span><a href="#" title="">Share a video on her timeline.</a></span>
                                                             <h6>"<a href="#">you are so funny mr.been.</a>"</h6>
                                                         </div>
                                                     </li>
@@ -476,40 +515,35 @@ const Body = () => {
                                                 <h4 className="widget-title">Who's follownig</h4>
                                                 <ul className="followers">
                                                     <li>
-                                                        <figure><img src="images/resources/friend-avatar2.jpg" alt=""/>
-                                                        </figure>
+                                                        <figure><img src="images/resources/friend-avatar2.jpg" alt=""/></figure>
                                                         <div className="friend-meta">
                                                             <h4><a href="time-line.html" title="">Kelly Bill</a></h4>
                                                             <a href="#" title="" className="underline">Add Friend</a>
                                                         </div>
                                                     </li>
                                                     <li>
-                                                        <figure><img src="images/resources/friend-avatar4.jpg" alt=""/>
-                                                        </figure>
+                                                        <figure><img src="images/resources/friend-avatar4.jpg" alt=""/></figure>
                                                         <div className="friend-meta">
                                                             <h4><a href="time-line.html" title="">Issabel</a></h4>
                                                             <a href="#" title="" className="underline">Add Friend</a>
                                                         </div>
                                                     </li>
                                                     <li>
-                                                        <figure><img src="images/resources/friend-avatar6.jpg" alt=""/>
-                                                        </figure>
+                                                        <figure><img src="images/resources/friend-avatar6.jpg" alt=""/></figure>
                                                         <div className="friend-meta">
                                                             <h4><a href="time-line.html" title="">Andrew</a></h4>
                                                             <a href="#" title="" className="underline">Add Friend</a>
                                                         </div>
                                                     </li>
                                                     <li>
-                                                        <figure><img src="images/resources/friend-avatar8.jpg" alt=""/>
-                                                        </figure>
+                                                        <figure><img src="images/resources/friend-avatar8.jpg" alt=""/></figure>
                                                         <div className="friend-meta">
                                                             <h4><a href="time-line.html" title="">Sophia</a></h4>
                                                             <a href="#" title="" className="underline">Add Friend</a>
                                                         </div>
                                                     </li>
                                                     <li>
-                                                        <figure><img src="images/resources/friend-avatar3.jpg" alt=""/>
-                                                        </figure>
+                                                        <figure><img src="images/resources/friend-avatar3.jpg" alt=""/></figure>
                                                         <div className="friend-meta">
                                                             <h4><a href="time-line.html" title="">Allen</a></h4>
                                                             <a href="#" title="" className="underline">Add Friend</a>
@@ -521,11 +555,11 @@ const Body = () => {
                                         </aside>
                                     </div>
                                     {/*// <!-- sidebar -->*/}
-                                    <div className="col-lg-6" id="body-scroll">
+                                    <div className="col-lg-6" id="profile-scroll">
                                         <div className="central-meta" id="central-post">
                                             <div className="new-postbox">
                                                 <figure>
-                                                    <img id="account-post-avatar" src={account.avatar} alt=""/>
+                                                    <img id="account-post-avatar" src={ account.avatar} alt=""/>
                                                 </figure>
                                                 <div className="newpst-input">
                                                     <form>
@@ -570,9 +604,6 @@ const Body = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div>
-
-                                        </div>
                                         {/*// <!-- add post new box -->*/}
                                         <div className="loadMore">
                                             {postFull.map((p) => (
@@ -580,7 +611,7 @@ const Body = () => {
                                                     <div className="user-post">
                                                         <div className="friend-info">
                                                             <figure>
-                                                                <img src={p.loggedInUser.avatar}
+                                                                <img src={ p.loggedInUser.avatar}
                                                                      id="img-logged" alt=""/>
                                                             </figure>
                                                             <div className="friend-name">
@@ -602,11 +633,11 @@ const Body = () => {
                                                                 <div>
                                                                     <button onClick={() => menuPost(p.id)}
                                                                             className="menu-button-post"><span><i
-                                                                        className="fa fa-ellipsis-v"></i></span></button>
+                                                                             className="fa fa-ellipsis-v"></i></span></button>
                                                                     <div id={"menu" + p.id} style={{display: 'none'}} className="menu-div-post">
                                                                         <div className="menu-post">
                                                                             <div className="menu-post-li">
-                                                                                {p.loggedInUser.id == account.id ?  <button className="button-menu-1" onClick={() => deletePost(p.id)}>
+                                                                                {p.loggedInUser.id === account.id ?  <button className="button-menu-1" onClick={() => deletePost(p.id)}>
                                                                                     <i className="fa fa-trash"></i> delete
                                                                                 </button> : null}
                                                                             </div>
@@ -849,308 +880,221 @@ const Body = () => {
                                         </div>
                                     </div>
                                     {/*// <!-- centerl meta -->*/}
-                                    <div className="col-lg-3">
-                                        <aside className="sidebar static">
-                                            <div className="widget">
-                                                <h4 className="widget-title">Your page</h4>
-                                                <div className="your-page">
-                                                    <figure>
-                                                        <a href="#" title=""><img
-                                                            src="images/resources/friend-avatar9.jpg" alt=""/></a>
-                                                    </figure>
-                                                    <div className="page-meta">
-                                                        <a href="#" title="" className="underline">My page</a>
-                                                        <span><i className="ti-comment"></i><a href="insight.html"
-                                                                                               title="">Messages <em>9</em></a></span>
-                                                        <span><i className="ti-bell"></i><a href="insight.html"
-                                                                                            title="">Notifications <em>2</em></a></span>
-                                                    </div>
-                                                    <div className="page-likes">
-                                                        <ul className="nav nav-tabs likes-btn">
-                                                            <li className="nav-item"><a className="active" href="#link1"
-                                                                                        data-toggle="tab">likes</a></li>
-                                                            <li className="nav-item"><a className="" href="#link2"
-                                                                                        data-toggle="tab">views</a></li>
-                                                        </ul>
-                                                        {/*// <!-- Tab panes -->*/}
-                                                        <div className="tab-content">
-                                                            <div className="tab-pane active fade show " id="link1">
-                                                                <span><i className="ti-heart"></i>884</span>
-                                                                <a href="#" title="weekly-likes">35 new likes this
-                                                                    week</a>
-                                                                <div className="users-thumb-list">
-                                                                    <a href="#" title="Anderw" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-1.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                    <a href="#" title="frank" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-2.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                    <a href="#" title="Sara" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-3.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                    <a href="#" title="Amy" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-4.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                    <a href="#" title="Ema" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-5.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                    <a href="#" title="Sophie" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-6.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                    <a href="#" title="Maria" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-7.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                </div>
-                                                            </div>
-                                                            <div className="tab-pane fade" id="link2">
-                                                                <span><i className="ti-eye"></i>440</span>
-                                                                <a href="#" title="weekly-likes">440 new views this
-                                                                    week</a>
-                                                                <div className="users-thumb-list">
-                                                                    <a href="#" title="Anderw" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-1.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                    <a href="#" title="frank" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-2.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                    <a href="#" title="Sara" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-3.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                    <a href="#" title="Amy" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-4.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                    <a href="#" title="Ema" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-5.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                    <a href="#" title="Sophie" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-6.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                    <a href="#" title="Maria" data-toggle="tooltip">
-                                                                        <img src="images/resources/userlist-7.jpg"
-                                                                             alt=""/>
-                                                                    </a>
-                                                                </div>
-                                                            </div>
+                                    <div class="col-lg-3">
+                                        <aside class="sidebar static">
+                                            <div class="advertisment-box">
+                                                <h4 class="">advertisment</h4>
+                                                <figure>
+                                                    <a href="#" title="Advertisment"><img src="images/resources/ad-widget.jpg" alt=""/></a>
+                                                </figure>
+                                            </div>
+                                            <div class="widget">
+                                                <h4 class="widget-title">Invite friends</h4>
+                                                <ul class="invition">
+                                                    <li>
+                                                        <figure><img src="images/resources/friend-avatar8.jpg" alt=""/></figure>
+                                                        <div class="friend-meta">
+                                                            <h4><a href="time-line.html" class="underline" title="">Sophia hayat</a></h4>
+                                                            <a href="#" title="" class="invite" data-ripple="">invite</a>
                                                         </div>
-                                                    </div>
-                                                </div>
+                                                    </li>
+                                                    <li>
+                                                        <figure><img src="images/resources/friend-avatar4.jpg" alt=""/></figure>
+                                                        <div class="friend-meta">
+                                                            <h4><a href="time-line.html" class="underline" title="">Issabel kaif</a></h4>
+                                                            <a href="#" title="" class="invite" data-ripple="">invite</a>
+                                                        </div>
+                                                    </li>
+                                                    <li>
+                                                        <figure><img src="images/resources/friend-avatar2.jpg" alt=""/></figure>
+                                                        <div class="friend-meta">
+                                                            <h4><a href="time-line.html" class="underline" title="">Kelly Bill</a></h4>
+                                                            <a href="#" title="" class="invite" data-ripple="">invite</a>
+                                                        </div>
+                                                    </li>
+                                                    <li>
+                                                        <figure><img src="images/resources/friend-avatar3.jpg" alt=""/></figure>
+                                                        <div class="friend-meta">
+                                                            <h4><a href="time-line.html" class="underline" title="">Allen jhon</a></h4>
+                                                            <a href="#" title="" class="invite" data-ripple="">invite</a>
+                                                        </div>
+                                                    </li>
+                                                    <li>
+                                                        <figure><img src="images/resources/friend-avatar6.jpg" alt=""/></figure>
+                                                        <div class="friend-meta">
+                                                            <h4><a href="time-line.html" class="underline" title="">tom Andrew</a></h4>
+                                                            <a href="#" title="" class="invite" data-ripple="">invite</a>
+                                                        </div>
+                                                    </li>
+
+                                                    <li>
+                                                        <figure><img src="images/resources/friend-avatar3.jpg" alt=""/></figure>
+                                                        <div class="friend-meta">
+                                                            <h4><a href="time-line.html" title="" class="underline">Allen doe</a></h4>
+                                                            <a href="#" title="" class="invite" data-ripple="">invite</a>
+                                                        </div>
+                                                    </li>
+                                                </ul>
                                             </div>
-                                            {/*// <!-- page like widget -->*/}
-                                            <div className="widget">
-                                                <div className="banner medium-opacity bluesh">
-                                                    <div className="bg-image"
-                                                         style={{backgroundImage: "url(images/resources/baner-widgetbg.jpg)"}}></div>
-                                                    <div className="baner-top">
-                                                        <span><img alt="" src="images/book-icon.png"/></span>
-                                                        <i className="fa fa-ellipsis-h"></i>
-                                                    </div>
-                                                    <div className="banermeta">
-                                                        <p>
-                                                            create your own favourit page.
-                                                        </p>
-                                                        <span>like them all</span>
-                                                        <a data-ripple="" title="" href="#">start now!</a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="widget friend-list stick-widget">
-                                                <h4 className="widget-title">Friends</h4>
+                                            {/*// <!-- invite for page  -->*/}
+
+                                            <div class="widget friend-list stick-widget">
+                                                <h4 class="widget-title">Friends</h4>
                                                 <div id="searchDir"></div>
-                                                <ul id="people-list" className="friendz-list">
+                                                <ul id="people-list" class="friendz-list">
                                                     <li>
                                                         <figure>
                                                             <img src="images/resources/friend-avatar.jpg" alt=""/>
-                                                            <span className="status f-online"></span>
+                                                            <span class="status f-online"></span>
                                                         </figure>
-                                                        <div className="friendz-meta">
+                                                        <div class="friendz-meta">
                                                             <a href="time-line.html">bucky barnes</a>
-                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection"
-                                                                  className="__cf_email__"
-                                                                  data-cfemail="a0d7c9ced4c5d2d3cfccc4c5d2e0c7cdc1c9cc8ec3cfcd">[email&#160;protected]</a></i>
+                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1e6977706a7b6c6d71727a7b6c5e79737f7772307d7173">[email&#160;protected]</a></i>
                                                         </div>
                                                     </li>
                                                     <li>
                                                         <figure>
                                                             <img src="images/resources/friend-avatar2.jpg" alt=""/>
-                                                            <span className="status f-away"></span>
+                                                            <span class="status f-away"></span>
                                                         </figure>
-                                                        <div className="friendz-meta">
+                                                        <div class="friendz-meta">
                                                             <a href="time-line.html">Sarah Loren</a>
-                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection"
-                                                                  className="__cf_email__"
-                                                                  data-cfemail="b4d6d5c6dad1c7f4d3d9d5ddd89ad7dbd9">[email&#160;protected]</a></i>
+                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="debcbfacb0bbad9eb9b3bfb7b2f0bdb1b3">[email&#160;protected]</a></i>
                                                         </div>
                                                     </li>
                                                     <li>
                                                         <figure>
                                                             <img src="images/resources/friend-avatar3.jpg" alt=""/>
-                                                            <span className="status f-off"></span>
+                                                            <span class="status f-off"></span>
                                                         </figure>
-                                                        <div className="friendz-meta">
+                                                        <div class="friendz-meta">
                                                             <a href="time-line.html">jason borne</a>
-                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection"
-                                                                  className="__cf_email__"
-                                                                  data-cfemail="1d777c6e72737f5d7a707c7471337e7270">[email&#160;protected]</a></i>
+                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0e646f7d61606c4e69636f6762206d6163">[email&#160;protected]</a></i>
                                                         </div>
                                                     </li>
                                                     <li>
                                                         <figure>
                                                             <img src="images/resources/friend-avatar4.jpg" alt=""/>
-                                                            <span className="status f-off"></span>
+                                                            <span class="status f-off"></span>
                                                         </figure>
-                                                        <div className="friendz-meta">
+                                                        <div class="friendz-meta">
                                                             <a href="time-line.html">Cameron diaz</a>
-                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection"
-                                                                  className="__cf_email__"
-                                                                  data-cfemail="bed4dfcdd1d0dcfed9d3dfd7d290ddd1d3">[email&#160;protected]</a></i>
+                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="513b30223e3f3311363c30383d7f323e3c">[email&#160;protected]</a></i>
                                                         </div>
                                                     </li>
                                                     <li>
 
                                                         <figure>
                                                             <img src="images/resources/friend-avatar5.jpg" alt=""/>
-                                                            <span className="status f-online"></span>
+                                                            <span class="status f-online"></span>
                                                         </figure>
-                                                        <div className="friendz-meta">
+                                                        <div class="friendz-meta">
                                                             <a href="time-line.html">daniel warber</a>
-                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection"
-                                                                  className="__cf_email__"
-                                                                  data-cfemail="553f34263a3b37153238343c397b363a38">[email&#160;protected]</a></i>
+                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="315b50425e5f5371565c50585d1f525e5c">[email&#160;protected]</a></i>
                                                         </div>
                                                     </li>
                                                     <li>
 
                                                         <figure>
                                                             <img src="images/resources/friend-avatar6.jpg" alt=""/>
-                                                            <span className="status f-away"></span>
+                                                            <span class="status f-away"></span>
                                                         </figure>
-                                                        <div className="friendz-meta">
+                                                        <div class="friendz-meta">
                                                             <a href="time-line.html">andrew</a>
-                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection"
-                                                                  className="__cf_email__"
-                                                                  data-cfemail="5933382a36373b193e34383035773a3634">[email&#160;protected]</a></i>
+                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f69c9785999894b6919b979f9ad895999b">[email&#160;protected]</a></i>
                                                         </div>
                                                     </li>
                                                     <li>
 
                                                         <figure>
                                                             <img src="images/resources/friend-avatar7.jpg" alt=""/>
-                                                            <span className="status f-off"></span>
+                                                            <span class="status f-off"></span>
                                                         </figure>
-                                                        <div className="friendz-meta">
+                                                        <div class="friendz-meta">
                                                             <a href="time-line.html">amy watson</a>
-                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection"
-                                                                  className="__cf_email__"
-                                                                  data-cfemail="5933382a36373b193e34383035773a3634">[email&#160;protected]</a></i>
+                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bad0dbc9d5d4d8faddd7dbd3d694d9d5d7">[email&#160;protected]</a></i>
                                                         </div>
                                                     </li>
                                                     <li>
 
                                                         <figure>
                                                             <img src="images/resources/friend-avatar5.jpg" alt=""/>
-                                                            <span className="status f-online"></span>
+                                                            <span class="status f-online"></span>
                                                         </figure>
-                                                        <div className="friendz-meta">
+                                                        <div class="friendz-meta">
                                                             <a href="time-line.html">daniel warber</a>
-                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection"
-                                                                  className="__cf_email__"
-                                                                  data-cfemail="dbb1baa8b4b5b99bbcb6bab2b7f5b8b4b6">[email&#160;protected]</a></i>
+                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="076d667468696547606a666e6b2964686a">[email&#160;protected]</a></i>
                                                         </div>
                                                     </li>
                                                     <li>
 
                                                         <figure>
                                                             <img src="images/resources/friend-avatar2.jpg" alt=""/>
-                                                            <span className="status f-away"></span>
+                                                            <span class="status f-away"></span>
                                                         </figure>
-                                                        <div className="friendz-meta">
+                                                        <div class="friendz-meta">
                                                             <a href="time-line.html">Sarah Loren</a>
-                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection"
-                                                                  className="__cf_email__"
-                                                                  data-cfemail="2644475448435566414b474f4a0845494b">[email&#160;protected]</a></i>
+                                                            <i><a href="https://wpkixx.com/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b1d3d0c3dfd4c2f1d6dcd0d8dd9fd2dedc">[email&#160;protected]</a></i>
                                                         </div>
                                                     </li>
                                                 </ul>
-                                                <div className="chat-box">
-                                                    <div className="chat-head">
-                                                        <span className="status f-online"></span>
+                                                <div class="chat-box">
+                                                    <div class="chat-head">
+                                                        <span class="status f-online"></span>
                                                         <h6>Bucky Barnes</h6>
-                                                        <div className="more">
-                                                            <span><i className="ti-more-alt"></i></span>
-                                                            <span className="close-mesage"><i className="ti-close"></i></span>
+                                                        <div class="more">
+                                                            <span><i class="ti-more-alt"></i></span>
+                                                            <span class="close-mesage"><i class="ti-close"></i></span>
                                                         </div>
                                                     </div>
-                                                    <div className="chat-list">
+                                                    <div class="chat-list">
                                                         <ul>
-                                                            <li className="me">
-                                                                <div className="chat-thumb"><img
-                                                                    src="images/resources/chatlist1.jpg" alt=""/></div>
-                                                                <div className="notification-event">
-															<span className="chat-message-item">
+                                                            <li class="me">
+                                                                <div class="chat-thumb"><img src="images/resources/chatlist1.jpg" alt=""/></div>
+                                                                <div class="notification-event">
+															<span class="chat-message-item">
 																Hi James! Please remember to buy the food for tomorrow! I’m gonna be handling the gifts and Jake’s gonna get the drinks
 															</span>
-                                                                    <span className="notification-date"><time
-                                                                        datetime="2004-07-24T18:18"
-                                                                        className="entry-date updated">Yesterday at 8:10pm</time></span>
+                                                                    <span class="notification-date"><time datetime="2004-07-24T18:18" class="entry-date updated">Yesterday at 8:10pm</time></span>
                                                                 </div>
                                                             </li>
-                                                            <li className="you">
-                                                                <div className="chat-thumb"><img
-                                                                    src="images/resources/chatlist2.jpg" alt=""/></div>
-                                                                <div className="notification-event">
-															<span className="chat-message-item">
+                                                            <li class="you">
+                                                                <div class="chat-thumb"><img src="images/resources/chatlist2.jpg" alt=""/></div>
+                                                                <div class="notification-event">
+															<span class="chat-message-item">
 																Hi James! Please remember to buy the food for tomorrow! I’m gonna be handling the gifts and Jake’s gonna get the drinks
 															</span>
-                                                                    <span className="notification-date"><time
-                                                                        datetime="2004-07-24T18:18"
-                                                                        className="entry-date updated">Yesterday at 8:10pm</time></span>
+                                                                    <span class="notification-date"><time datetime="2004-07-24T18:18" class="entry-date updated">Yesterday at 8:10pm</time></span>
                                                                 </div>
                                                             </li>
-                                                            <li className="me">
-                                                                <div className="chat-thumb"><img
-                                                                    src="images/resources/chatlist1.jpg" alt=""/></div>
-                                                                <div className="notification-event">
-															<span className="chat-message-item">
+                                                            <li class="me">
+                                                                <div class="chat-thumb"><img src="images/resources/chatlist1.jpg" alt=""/></div>
+                                                                <div class="notification-event">
+															<span class="chat-message-item">
 																Hi James! Please remember to buy the food for tomorrow! I’m gonna be handling the gifts and Jake’s gonna get the drinks
 															</span>
-                                                                    <span className="notification-date"><time
-                                                                        datetime="2004-07-24T18:18"
-                                                                        className="entry-date updated">Yesterday at 8:10pm</time></span>
+                                                                    <span class="notification-date"><time datetime="2004-07-24T18:18" class="entry-date updated">Yesterday at 8:10pm</time></span>
                                                                 </div>
                                                             </li>
                                                         </ul>
-                                                        <form className="text-box">
+                                                        <form class="text-box">
                                                             <textarea placeholder="Post enter to post..."></textarea>
-                                                            <div className="add-smiles">
-                                                                <span title="add icon"
-                                                                      className="em em-expressionless"></span>
+                                                            <div class="add-smiles">
+                                                                <span title="add icon" class="em em-expressionless"></span>
                                                             </div>
-                                                            <div className="smiles-bunch">
-                                                                <i className="em em---1"></i>
-                                                                <i className="em em-smiley"></i>
-                                                                <i className="em em-anguished"></i>
-                                                                <i className="em em-laughing"></i>
-                                                                <i className="em em-angry"></i>
-                                                                <i className="em em-astonished"></i>
-                                                                <i className="em em-blush"></i>
-                                                                <i className="em em-disappointed"></i>
-                                                                <i className="em em-worried"></i>
-                                                                <i className="em em-kissing_heart"></i>
-                                                                <i className="em em-rage"></i>
-                                                                <i className="em em-stuck_out_tongue"></i>
+                                                            <div class="smiles-bunch">
+                                                                <i class="em em---1"></i>
+                                                                <i class="em em-smiley"></i>
+                                                                <i class="em em-anguished"></i>
+                                                                <i class="em em-laughing"></i>
+                                                                <i class="em em-angry"></i>
+                                                                <i class="em em-astonished"></i>
+                                                                <i class="em em-blush"></i>
+                                                                <i class="em em-disappointed"></i>
+                                                                <i class="em em-worried"></i>
+                                                                <i class="em em-kissing_heart"></i>
+                                                                <i class="em em-rage"></i>
+                                                                <i class="em em-stuck_out_tongue"></i>
                                                             </div>
                                                             <button type="submit"></button>
                                                         </form>
@@ -1171,13 +1115,13 @@ const Body = () => {
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="modal-header">
-                                <h4 className="modal-title" >create articles</h4>
+                            <h4 className="modal-title" >create articles</h4>
                             <button type="button" className="close" data-dismiss="modal" id="closeModalButton">&times;</button>
                         </div>
                         <div id="modal-avatar">
                             <div>
                                 <figure>
-                                <img id="account-post-avatar-2" src={account.avatar} alt=""/>
+                                    <img id="account-post-avatar-2" src={ account.avatar} alt=""/>
                                 </figure>
                             </div>
                             <div id="modal-avatar-fill">
@@ -1199,45 +1143,44 @@ const Body = () => {
                              <textarea rows="2" placeholder="write something ... ?" id="post-content" onChange={handlePostContentChange}>
                             </textarea><br/>
                         </div>
-                          <div id="seclect-img-display">
-                              <div className="post-meta">
-                              <img src={fileDataURL} alt="Selected Image"
-                                   id="selectedImage" style={{display: 'none'}}/>
-                              {selectedImage && (
-                                  <span className="remove-image" onClick={remoteFile}>
+                        <div id="seclect-img-display">
+                            <div className="post-meta">
+                                <img src={fileDataURL} alt="Selected Image"
+                                     id="selectedImage" style={{display: 'none'}}/>
+                                {selectedImage && (
+                                    <span className="remove-image" onClick={remoteFile}>
                                       <svg id="bi-x-square" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-square" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
                                   </span>
-                              )}
-                              </div>
-
-                              <div className="attachments" id="change-file-img">
-                                  <ul>
-                                      <li>
-                                          <h6>
-                                              Add to your article  !
-                                          </h6>
-                                      </li>
-                                      <li>
-                                          <i className="fa fa-image" id="icon-post-img"></i>
-                                          <label className="fileContainer">
-                                              <input type="file" id="file1" accept='.png, .jpg, .jpeg' onChange={changeImage}/>
-                                          </label>
-                                      </li>
-                                      <li>
-                                          <i className="fa fa-video-camera" id="icon-post-video"></i>
-                                          <label className="fileContainer">
-                                              <input type="file"/>
-                                          </label>
-                                      </li>
-                                      <li>
-                                          <i className="fa fa-camera" id="icon-post-camera"></i>
-                                          <label className="fileContainer">
-                                              <input type="file"/>
-                                          </label>
-                                      </li>
-                                  </ul>
-                              </div>
-                          </div>
+                                )}
+                            </div>
+                            <div className="attachments" id="change-file-img">
+                                <ul>
+                                    <li>
+                                        <h6>
+                                            Add to your article  !
+                                        </h6>
+                                    </li>
+                                    <li>
+                                        <i className="fa fa-image" id="icon-post-img"></i>
+                                        <label className="fileContainer">
+                                            <input type="file" id="file1" accept='.png, .jpg, .jpeg' onChange={changeImage}/>
+                                        </label>
+                                    </li>
+                                    <li>
+                                        <i className="fa fa-video-camera" id="icon-post-video"></i>
+                                        <label className="fileContainer">
+                                            <input type="file"/>
+                                        </label>
+                                    </li>
+                                    <li>
+                                        <i className="fa fa-camera" id="icon-post-camera"></i>
+                                        <label className="fileContainer">
+                                            <input type="file"/>
+                                        </label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                         <div className="modal-footer">
                             <button type="button" id="post-post"  onClick={() => createPost()}>Post</button>
                         </div>
@@ -1249,13 +1192,13 @@ const Body = () => {
                     <div className="modal-content">
                         <div className="modal-header">
                             <h4 className="modal-title" >Edit article</h4>
-                            <button type="button" className="close" data-dismiss="modal" id="closeModalButton">&times;</button>
+                            <button id="closeModalUd" type="button" className="close" data-dismiss="modal" >&times;</button>
                         </div>
                         <div id="modal-avatar">
                             <input type="hidden" id="idPostModal" />
                             <div>
                                 <figure>
-                                    <img id="account-post-avatar-2" src={account.avatar} alt=""/>
+                                    <img id="account-post-avatar-2" src={ account.avatar} alt=""/>
                                 </figure>
                             </div>
                             <div id="modal-avatar-fill">
@@ -1279,11 +1222,11 @@ const Body = () => {
                         </div>
                         <div id="seclect-img-display">
                             <div className="post-meta">
-                                <img src={selectedImageUpdate} alt="Selected Image" id="selectedImageUpdate" style={{ display: 'none' }} />
-                                {selectedImageUpdate && (
+                                <img src={fileDataURL} alt="Selected Image" id="selectedImageUpdate" style={{ display: 'none' }} />
+                                {fileDataURL !== null && (
                                     <span className="remove-image-update" onClick={remoteFileUpdate}>
-                                      <svg id="bi-x-square" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-square" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                                  </span>
+                                        <svg id="bi-x-square" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-square" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                          </span>
                                 )}
                             </div>
 
@@ -1316,13 +1259,14 @@ const Body = () => {
                             </div>
                         </div>
                         <div className="modal-footer">
-                            <button type="button" id="post-post"  onClick={() => updatePost()}>Post</button>
+                            <button type="button" id="post-post"  onClick={() => updatePost()}>Update</button>
                         </div>
                     </div>
                 </div>
             </div>
+            <div className="loader" id="loader" style={{display:"none"}}></div>
         </div>
     );
 };
 
-export default Body;
+export default Profile;

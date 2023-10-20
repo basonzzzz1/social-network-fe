@@ -1,10 +1,10 @@
-import React, {useEffect, useState} from 'react';
-import Service from "../services/Service";
+import React, {useEffect, useRef, useState} from 'react';
+import Service from "../../services/Service";
 import {Link, useParams} from "react-router-dom";
-import Header from "./Header";
+import Header from "../home/Header";
 import moment from "moment/moment";
-import SockJS from "sockjs-client";
-import Stomp from "stompjs";
+import {useDispatch} from "react-redux";
+import {toast} from "react-toastify";
 
 const SeeProfile = () => {
     const [account, setAccount] = useState({});
@@ -13,48 +13,11 @@ const SeeProfile = () => {
     const [posts, setPosts] = useState([]);
     const [postFull, setPostFull] = useState([]);
     const [like, setLike] = useState([]);
+    const [listFriendRRequest, setListFriendRRequest] = useState([]);
     const [menu, setMenu] = useState(false);
+    const [checkFriend, setCheckFriend] = useState(false);
+    const dispatch = useDispatch();
     const { id } = useParams();
-    const socket = new SockJS('http://localhost:8080/ws');
-    const stompClient = Stomp.over(socket);
-    stompClient.connect({}, (frame) => {
-        alert('Connected to WebSocket');
-        // Lắng nghe tin nhắn từ máy chủ
-        stompClient.subscribe('/topic/like', (message) => {
-            console.log('Received like message:', message.body);
-            setLoad(true)
-            alert("lắng nghe")
-            Service.findAllLike().then((response) => {
-                setLike(response)
-            }).catch((error) => {
-                // alert("lỗi !")
-            })
-            // Xử lý tin nhắn like ở đây
-            // Ví dụ: cập nhật trạng thái like trong danh sách bài viết
-            // Cần có một cơ chế để xác định bài viết được like và người dùng thực hiện like
-        });
-        stompClient.subscribe('/topic/deleteLike', (message) => {
-            console.log('Received deleteLike message:', message.body);
-            alert("lắng nghe")
-            Service.findAllPost().then((response) => {
-                const sortedPosts = response.sort((a, b) => {
-                    return new Date(b.time) - new Date(a.time);
-                });
-                setPosts(sortedPosts)
-                console.log(response)
-                setLoad(true)
-            }).catch((error) => {
-
-            })
-            Service.findAllLike().then((response) => {
-                setLike(response)
-            }).catch((error) => {
-                // alert("lỗi !")
-            })
-            // Xử lý tin nhắn deleteLike ở đây
-            // Ví dụ: cập nhật trạng thái deleteLike trong danh sách bài viết
-        });
-    });
 
     useEffect(() => {
         Service.seeProfile(id).then((response)=>{
@@ -124,6 +87,20 @@ const SeeProfile = () => {
             document.getElementById(`menu${id}`).style.display = 'block';
         }
     };
+    useEffect(() => {
+        Service.allFriendRequest()
+            .then((response) => {
+              setListFriendRRequest(response.data)
+                for (let i = 0; i < response.data.length; i++) {
+                    if(response.data[i].fromUser.id == localStorage.getItem("idAccount") && response.data[i].toUser.id == account.id){
+                        setCheckFriend(true);
+                    }
+                }
+            })
+            .catch((error) => {
+                alert("lỗi find all friend request !");
+            });
+    }, [id,load]);
     const deletePost = (id) => {
         Service.deletePost(id)
             .then((response) => {
@@ -134,19 +111,38 @@ const SeeProfile = () => {
                 alert("lỗi xóa post");
             });
     }
+    const sendMessage1 = () => {
+        // let data = {
+        //     toUserId: account.id,
+        //     content: document.getElementById("message-content-modal-create").value
+        // }
+        // Service.sendMessage(account.id, data).then((response) => {
+        //     document.getElementById("message-content-modal-create").value = "";
+        // }).catch((error) => {
+        //     toast.error("not send message error !")
+        //     console.log(error);
+        //     setLoad(false)
+        // })
+    }
+
+    const addFriend = () => {
+       let data = {
+           fromUser:{id: localStorage.getItem("idAccount")},
+           toUser:{id: account.id}
+        }
+        Service.addFriendRequest(data)
+            .then((response) => {
+                setLoad(true);
+            })
+            .catch((error) => {
+                toast.warning("You have already sent a friend request");
+            });
+    }
     const likePost = (post) => {
         const isLiked = like.some((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id);
         const likeId = isLiked ? like.find((likedPost) => likedPost.post.id === post.id && account.id === likedPost.account.id)?.id : null;
         const action = isLiked ? Service.deleteLike(likeId) : Service.likePost({ account, post });
-        action
-            .then(() => {
-                stompClient.send(isLiked ? '/app/deleteLike' : '/app/like', {}, JSON.stringify({ likeId }));
-                setLoad(true);
-            })
-            .catch((error) => {
-                console.error(`Lỗi khi ${isLiked ? 'xóa like' : 'like'}:`, error);
-                alert(`Lỗi khi ${isLiked ? 'xóa like' : 'like'}:`);
-            });
+        setLoad(true);
     };
     const logout = () => {
         localStorage.removeItem("idAccount");
@@ -157,31 +153,18 @@ const SeeProfile = () => {
         <div>
             <section>
                 <div className="feature-photo">
-                    <figure><img src="images/resources/timeline-4.jpg" alt=""/></figure>
+                    <figure><img src={account.thumbnail} alt="" style={{width: 1536, height: 449.783}}/></figure>
                     <div className="add-btn">
                         <span>1.3k followers</span>
-                        <a href="#" title="" data-ripple="">Add button</a>
+                        {checkFriend ? <Link to={"#"} title="" id="cancel-request" data-ripple="">Cancel request</Link> :
+                            <Link to={"#"} title="" data-ripple="" onClick={()=>addFriend()}>Add Friend</Link>}
                     </div>
-                    <form className="edit-phto">
-                        <i className="fa fa-camera-retro"></i>
-                        <label className="fileContainer">
-                            Edit Cover Photo
-                            <input type="file"/>
-                        </label>
-                    </form>
                     <div className="container-fluid">
                         <div className="row merged">
                             <div className="col-lg-2 col-sm-3">
                                 <div className="user-avatar">
                                     <figure>
-                                        <img src={`images/profile/`+account.avatar} alt=""/>
-                                        <form className="edit-phto">
-                                            <i className="fa fa-camera-retro"></i>
-                                            <label className="fileContainer">
-                                                Edit Display Photo
-                                                <input type="file"/>
-                                            </label>
-                                        </form>
+                                        <img src={account.avatar} alt="" style={{width: 225.667, height: 220.817}}/>
                                     </figure>
                                 </div>
                             </div>
@@ -327,7 +310,7 @@ const SeeProfile = () => {
                                                         <figure><img src="images/resources/friend-avatar3.jpg" alt=""/></figure>
                                                         <div className="friend-meta">
                                                             <h4><a href="time-line.html" title="">Allen</a></h4>
-                                                            <a href="#" title="" className="underline">Add Friend</a>
+                                                            <a href="#" className="underline" >Add Friend</a>
                                                         </div>
                                                     </li>
                                                 </ul>
@@ -344,7 +327,7 @@ const SeeProfile = () => {
                                                     <div className="user-post">
                                                         <div className="friend-info">
                                                             <figure>
-                                                                <img src={`images/profile/` + p.loggedInUser.avatar}
+                                                                <img src={p.loggedInUser.avatar}
                                                                      id="img-logged" alt=""/>
                                                             </figure>
                                                             <div className="friend-name">
@@ -397,7 +380,7 @@ const SeeProfile = () => {
                                                                         {p.content}
                                                                     </p>
                                                                 </div>
-                                                                <img src={`images/profile/` + p.image} alt=""/>
+                                                                <img src={p.image} alt=""/>
                                                                 <div className="we-video-info">
                                                                     <ul>
                                                                         <li>

@@ -1,7 +1,17 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Link} from "react-router-dom";
 
 const LeftSideBarAbout = () => {
+
+    localStorage.setItem("checkEdit","true");
+    const setCheckEditPassWord = () => {
+        localStorage.setItem("checkEdit", "false");
+    }
+
+    const setCheckEditInfor = () => {
+        localStorage.setItem("checkEdit", "true");
+    }
+
     return (
         <>
             <div className="widget">
@@ -9,11 +19,11 @@ const LeftSideBarAbout = () => {
                 <ul className="naves">
                     <li>
                         <i className="ti-info-alt"></i>
-                        <Link to={"/profile/editInfo"}>Basic info</Link>
+                        <Link to={"#"} onClick={() => setCheckEditInfor()}>Basic info</Link>
                     </li>
                     <li>
                         <i className="ti-lock"></i>
-                        <a title="" href="edit-password.html">change password</a>
+                        <Link to={"#"} onClick={() => setCheckEditPassWord()}>change password</Link>
                     </li>
                 </ul>
             </div>

@@ -15,4 +15,13 @@ export const LIKE_DELETE_API = `http://localhost:8080/apiLike/`;
 export const POST_FOLLOW_API = `http://localhost:8080/apiPost/getPostFollow/`;
 export const POST_USE_API = `http://localhost:8080/apiPost/getAllByAccount/`;
 export const LIST_MESSAGE_BY_TIME_ACCOUNT = `http://localhost:8080/message/allFriend/`;
+export const LIST_MESSAGE_BY_FRIEND = `http://localhost:8080/message/all/`;
+export const SEND_MESSAGE = `http://localhost:8080/message/chat/`;
+export const API_SEARCH_NAME = `http://localhost:8080/apiAccount/search/`;
+export const API_ADD_FRIEND_REQUEST = `http://localhost:8080/apiFollow/addFriendRequest`;
+export const API_ALL_FRIEND_REQUEST = `http://localhost:8080/apiFollow/getFriendRequest/`;
+export const ADD_COMMENT_API = `http://localhost:8080/apiComment`;
+export const GET_ALL_COMMENT_API = `http://localhost:8080/apiComment`;
+export const COMMENT_DELETE_API =  `http://localhost:8080/apiComment/delete/`;
+export const COMMENT_UPDATE_API = `http://localhost:8080/apiComment/update`;
 // Thêm các đường dẫn API khác ở đây

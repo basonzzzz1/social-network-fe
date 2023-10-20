@@ -58,6 +58,9 @@ const UserService = {
     },
     editUser: async (user) => {
         return await Axios.post(`/apiUser/editUser/${user.id}`, user);
+    },
+    editPassword: async (user) => {
+        return await Axios.post(`/editUser/password/${localStorage.getItem("idAccount")}/`+user.nPassword);
     }
 }
 

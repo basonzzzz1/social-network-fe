@@ -2,19 +2,20 @@ import React, {Suspense, lazy} from 'react';
 import {BrowserRouter as Router, Routes, Route, Navigate, useLocation, Outlet} from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import NotFound from "./components/NotFound";
+import NotFound from "./components/notfound/NotFound";
 import userService from "./services/Service";
-import LoginRegister from "./components/LoginRegister";
+
 import {Provider} from "react-redux";
 import store from '../src/redux/store/store';
-import About from "./components/About";
-const SeeProfile = lazy(() => import('./components/SeeProfile'));
-const Header = lazy(() => import('./components/Header'));
-const Body = lazy(() => import('./components/Body'));
-const Profile = lazy(() => import('./components/Profile'));
-const EditProfile = lazy(() => import('./components/EditProfile'));
-const Login = lazy(() => import('./components/Login'));
-const Register = lazy(() => import('./components/Register'));
+import About from "./components/home/About";
+const LoginRegister = lazy(() => import('./components/user/LoginRegister'));
+const SeeProfile = lazy(() => import('./components/profile/SeeProfile'));
+const Header = lazy(() => import('./components/home/Header'));
+const Body = lazy(() => import('./components/home/Body'));
+const Profile = lazy(() => import('./components/profile/Profile'));
+const EditProfile = lazy(() => import('./components/profile/EditProfile'));
+const Login = lazy(() => import('./components/user/Login'));
+const Register = lazy(() => import('./components/user/Register'));
 
 const App = () => {
     let loggedIn = userService.isTheUserLoggedIn();

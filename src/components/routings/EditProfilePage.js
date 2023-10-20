@@ -1,7 +1,7 @@
 import React from 'react';
-import Header from "../Header";
+import Header from "../home/Header";
 import {Route, Routes} from "react-router-dom";
-import EditProfile from "../EditProfile";
+import EditProfile from "../profile/EditProfile";
 
 const EditProfilePage = () => {
     return (

@@ -1,7 +1,7 @@
 import React from 'react';
-import Header from "../Header";
+import Header from "../home/Header";
 import {Route, Routes} from "react-router-dom";
-import SeeProfile from "../SeeProfile";
+import SeeProfile from "../profile/SeeProfile";
 
 const SeeProfilePage = () => {
     return (

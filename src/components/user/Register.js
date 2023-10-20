@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Link, Navigate} from "react-router-dom";
-import Service from "../services/Service";
+import Service from "../../services/Service";
 // import fs from "fs";
 // import * as fs from "fs"
 const Register = () => {

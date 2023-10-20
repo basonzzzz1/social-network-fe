@@ -1,6 +1,6 @@
 import React from 'react';
-import Header from "../Header";
-import Profile from "../Profile";
+import Header from "../home/Header";
+import Profile from "../profile/Profile";
 import {Route, Routes} from "react-router-dom";
 
 const ProfilePage = () => {

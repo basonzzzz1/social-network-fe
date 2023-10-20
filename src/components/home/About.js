@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import Service from "../services/Service";
+import Service from "../../services/Service";
 import {useSelector} from "react-redux";
 
 const About = () => {

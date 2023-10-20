@@ -5,9 +5,9 @@ import {toast} from "react-toastify";
 import {ErrorMessage, Field, Form, Formik} from "formik";
 import * as Yup from "yup";
 import {useDispatch} from 'react-redux';
-import {updateUserToken} from '../redux/actions/userActions';
-import LoginRegisterService from "../services/LoginRegisterService";
-import Service from "../services/Service";
+import {updateUserToken} from '../../redux/actions/userActions';
+import LoginRegisterService from "../../services/LoginRegisterService";
+import Service from "../../services/Service";
 
 const LoginRegister = () => {
     const dispatch = useDispatch();
