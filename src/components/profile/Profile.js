@@ -21,6 +21,8 @@ const Profile = () => {
     const [like, setLike] = useState([]);
     const [menu, setMenu] = useState(false);
     const [status, setStatus] = useState([]);
+    const [listFriendAccount, setListFriendAccount] = useState([]);
+    const [friendshipSuggestions, setFriendshipSuggestions] = useState([]);
     const [post, setPost] = useState({});
     const [postContent, setPostContent] = useState("");
     const [selectedImage, setSelectedImage] = useState(null);
@@ -147,7 +149,16 @@ const Profile = () => {
             document.getElementById("post-post").style.color = "#888888";
         }
     }, [postContent,selectedImage]);
-
+    useEffect(() => {
+        Service.getAllFriendshipSuggestions()
+            .then((response) => {
+                setFriendshipSuggestions(response)
+            })
+            .catch((error) => {
+                console.error(error);
+                toast.error("error");
+            });
+    }, [load]);
 
     useEffect(() => {
         let newPostFull = {};
@@ -253,6 +264,18 @@ const Profile = () => {
             console.log(error);
         })
     }
+    useEffect(() => {
+        Service.findByAllFriendByAccount(localStorage.getItem("idAccount"))
+            .then((response) => {
+                setListFriendAccount(response);
+                console.log("ok")
+                console.log(response)
+            })
+            .catch((error) => {
+                console.log("err find all ")
+                console.log(error)
+            });
+    }, []);
     const updatePost = async () => {
         let idPost = document.getElementById("idPostModal").value;
         let content = document.getElementById("update-post-content").value;
@@ -370,7 +393,7 @@ const Profile = () => {
                 <div className="feature-photo">
                     <figure><img src={userToken.thumbnail} alt="" style={{width: 1536, height: 449.783}}/></figure>
                     <div className="add-btn">
-                        <span>1.3k followers</span>
+                        <span>{listFriendAccount.length} Friend</span>
                     </div>
                     <form className="edit-phto">
                         <i className="fa fa-camera-retro"></i>
@@ -514,41 +537,16 @@ const Profile = () => {
                                             <div className="widget stick-widget">
                                                 <h4 className="widget-title">Who's follownig</h4>
                                                 <ul className="followers">
-                                                    <li>
-                                                        <figure><img src="images/resources/friend-avatar2.jpg" alt=""/></figure>
-                                                        <div className="friend-meta">
-                                                            <h4><a href="time-line.html" title="">Kelly Bill</a></h4>
-                                                            <a href="#" title="" className="underline">Add Friend</a>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <figure><img src="images/resources/friend-avatar4.jpg" alt=""/></figure>
-                                                        <div className="friend-meta">
-                                                            <h4><a href="time-line.html" title="">Issabel</a></h4>
-                                                            <a href="#" title="" className="underline">Add Friend</a>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <figure><img src="images/resources/friend-avatar6.jpg" alt=""/></figure>
-                                                        <div className="friend-meta">
-                                                            <h4><a href="time-line.html" title="">Andrew</a></h4>
-                                                            <a href="#" title="" className="underline">Add Friend</a>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <figure><img src="images/resources/friend-avatar8.jpg" alt=""/></figure>
-                                                        <div className="friend-meta">
-                                                            <h4><a href="time-line.html" title="">Sophia</a></h4>
-                                                            <a href="#" title="" className="underline">Add Friend</a>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <figure><img src="images/resources/friend-avatar3.jpg" alt=""/></figure>
-                                                        <div className="friend-meta">
-                                                            <h4><a href="time-line.html" title="">Allen</a></h4>
-                                                            <a href="#" title="" className="underline">Add Friend</a>
-                                                        </div>
-                                                    </li>
+                                                    {friendshipSuggestions.map((f) => (
+                                                        <li>
+                                                            <figure><img className="img-friendshipSuggestions" src={f.fromUser.avatar} alt=""/>
+                                                            </figure>
+                                                            <div className="friend-meta">
+                                                                <h4><a href="time-line.html" title="">{f.fromUser.firstName} {f.fromUser.lastName}</a></h4>
+                                                                <Link to={"#"} title="" className="underline">Add Friend</Link>
+                                                            </div>
+                                                        </li>
+                                                    ))}
                                                 </ul>
                                             </div>
                                             {/*// <!-- who's following -->*/}
@@ -882,12 +880,6 @@ const Profile = () => {
                                     {/*// <!-- centerl meta -->*/}
                                     <div class="col-lg-3">
                                         <aside class="sidebar static">
-                                            <div class="advertisment-box">
-                                                <h4 class="">advertisment</h4>
-                                                <figure>
-                                                    <a href="#" title="Advertisment"><img src="images/resources/ad-widget.jpg" alt=""/></a>
-                                                </figure>
-                                            </div>
                                             <div class="widget">
                                                 <h4 class="widget-title">Invite friends</h4>
                                                 <ul class="invition">

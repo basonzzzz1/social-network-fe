@@ -641,12 +641,15 @@ code {
 }
 .menu-button-cmt{
   border: hidden;
-
   background-color: white;
   color: #595757;
   transform: translateX(540px) translateY(-20px);
   position: absolute;
 }
+/*.button-close-text-edit-comment{*/
+/*  position: absolute;*/
+/*  transform: translateX(540px) translateY(-20px);*/
+/*}*/
 .menu-div-cmt{
   transform: translateX(390px) translateY(-30px);
   /*background-color: #262323;*/
@@ -694,6 +697,10 @@ code {
 .sent-icon {
   transform: translateX(-10px) translateY(-10px);
 }
+.avatar-cmt-cmt-cmt{
+  width: 40px;
+  height: 40px;
+}
 .friend-image-avatar-modal{
   width: 50px;
   height: 50px;
@@ -702,6 +709,43 @@ code {
 #cancel-request{
   background-color: white;
   color: black;
+}
+.Monitor{
+  margin-right: 10px;
+}
+#cancel-monitor{
+  background-color: white;
+  color: black;
+}
+.img-friendshipSuggestions{
+  width: 45px;
+  height: 45px;
+}
+.button-close-edit-comment{
+  position: absolute;
+  transform: translateX(415px) translateY(0px) ;
+  border-radius: 50%;
+  font-size: 25px;
+  background-color: white;
+  border: hidden;
+  color: #575757;
+}
+.img-friendRequest-abc{
+  width: 37px;
+  height: 37px;
+}
+#followers-nav-bat-left{
+  overflow-y: scroll;
+  height: 700px;
+}
+#followers-nav-bat-left ::-webkit-scrollbar {
+  display: none;
+}
+.we-comment{
+  border: 1px solid #cbcbcb
+}
+.top-cmt{
+
 }
 #search-form-modal{
   border: hidden;
@@ -768,8 +812,8 @@ code {
   height: 1500px;
 }
 #img-logged{
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
 }
 .remove-image {
   cursor: pointer;
@@ -800,8 +844,11 @@ code {
 margin-top: 60px;
 }
 .chatting-area{
-  overflow-x: scroll;
+  overflow-y: scroll;
   width: 600px;
+}
+.chatting-area ::-webkit-scrollbar {
+  display: none;
 }
 .message-text-container{
   position: fixed;
@@ -918,7 +965,7 @@ width: 200px;
   transform: translateX(492px) translateY(-10px);
 }
 .menu-post{
-  width: 150px;
+  width: 155px;
   display: block;
   position: absolute;
   border: 1px solid #b2b2b2;
@@ -926,11 +973,10 @@ width: 200px;
   border: hidden;
   border-radius: 5px;
 }
-/*.menu-post > :hover {*/
-/*  box-shadow: 0 8px 8px #bbb9b9;*/
-/*  border-color: transparent;*/
-/*  !*border-radius: 20px;*!*/
-/*}*/
+#img-avatar-title-infor-123{
+  width: 55px;
+  height: 55px;
+}
 .button-menu-1{
 background-color: white;
   border: hidden;

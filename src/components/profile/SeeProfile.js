@@ -14,8 +14,12 @@ const SeeProfile = () => {
     const [postFull, setPostFull] = useState([]);
     const [like, setLike] = useState([]);
     const [listFriendRRequest, setListFriendRRequest] = useState([]);
+    const [listFriendAccount, setListFriendAccount] = useState([]);
+    const [friendRequest, setFriendRequest] = useState({});
+    const [monitor, setMonitor] = useState({});
     const [menu, setMenu] = useState(false);
     const [checkFriend, setCheckFriend] = useState(false);
+    const [checkMonitor, setCheckMonitor] = useState(false);
     const dispatch = useDispatch();
     const { id } = useParams();
 
@@ -94,6 +98,7 @@ const SeeProfile = () => {
                 for (let i = 0; i < response.data.length; i++) {
                     if(response.data[i].fromUser.id == localStorage.getItem("idAccount") && response.data[i].toUser.id == account.id){
                         setCheckFriend(true);
+                        setFriendRequest(response.data[i])
                     }
                 }
             })
@@ -111,19 +116,6 @@ const SeeProfile = () => {
                 alert("lỗi xóa post");
             });
     }
-    const sendMessage1 = () => {
-        // let data = {
-        //     toUserId: account.id,
-        //     content: document.getElementById("message-content-modal-create").value
-        // }
-        // Service.sendMessage(account.id, data).then((response) => {
-        //     document.getElementById("message-content-modal-create").value = "";
-        // }).catch((error) => {
-        //     toast.error("not send message error !")
-        //     console.log(error);
-        //     setLoad(false)
-        // })
-    }
 
     const addFriend = () => {
        let data = {
@@ -133,9 +125,68 @@ const SeeProfile = () => {
         Service.addFriendRequest(data)
             .then((response) => {
                 setLoad(true);
+                setCheckFriend(true);
             })
             .catch((error) => {
                 toast.warning("You have already sent a friend request");
+            });
+    }
+    const addMonitor = () => {
+        Service.addFavourite(localStorage.getItem("idAccount"),account.id)
+            .then((response) => {
+                setLoad(true);
+                setCheckMonitor(true);
+            })
+            .catch((error) => {
+                toast.warning("You have already sent a Monitor ");
+            });
+    }
+    useEffect(() => {
+        Service.findByAllFriendByAccount(id)
+            .then((response) => {
+                setListFriendAccount(response);
+            })
+            .catch((error) => {
+               console.log("err find all ")
+               console.log(error)
+            });
+    }, [id]);
+    useEffect(() => {
+        Service.findFavourite()
+            .then((response) => {
+                for (let i = 0; i < response.length; i++) {
+                    if(response[i].fromUser.id == localStorage.getItem("idAccount") && response[i].toUser.id == account.id){
+                        setCheckMonitor(true);
+                        setMonitor(response[i]);
+                    }
+                }
+            })
+            .catch((error) => {
+                console.log("err find all ")
+                console.log(error)
+            });
+    }, [id,load]);
+    const deleteMonitor = () => {
+        Service.deleteFavourite(monitor.id)
+            .then((response) => {
+                setLoad(true);
+                setCheckMonitor(false);
+            })
+            .catch((error) => {
+                toast.warning(" error delete monitor !");
+            });
+    }
+    const deleteFriendRequest = () => {
+        Service.deleteFriendRequest(friendRequest.id)
+            .then((response) => {
+                setLoad(true);
+                setCheckFriend(false);
+            })
+            .catch((error) => {
+                console.log(friendRequest.id)
+                console.log("cwdcwdc")
+                console.log(error)
+                toast.warning("error delete friend request !");
             });
     }
     const likePost = (post) => {
@@ -155,8 +206,13 @@ const SeeProfile = () => {
                 <div className="feature-photo">
                     <figure><img src={account.thumbnail} alt="" style={{width: 1536, height: 449.783}}/></figure>
                     <div className="add-btn">
-                        <span>1.3k followers</span>
-                        {checkFriend ? <Link to={"#"} title="" id="cancel-request" data-ripple="">Cancel request</Link> :
+                        <span>{listFriendAccount.length} Friend</span>
+                        {checkMonitor ?
+                            <Link to={"#"} title="" data-ripple="" className="Monitor" id="cancel-monitor" onClick={()=>deleteMonitor()}>Cancel Monitor</Link>
+                           : <Link to={"#"} title="" data-ripple="" className="Monitor" onClick={()=>addMonitor()}>Monitor</Link>
+                        }
+                        {checkFriend ?
+                            <Link to={"#"} title="" id="cancel-request" data-ripple="" onClick={()=> deleteFriendRequest()}>Cancel request</Link> :
                             <Link to={"#"} title="" data-ripple="" onClick={()=>addFriend()}>Add Friend</Link>}
                     </div>
                     <div className="container-fluid">
@@ -274,7 +330,6 @@ const SeeProfile = () => {
                                                     </li>
                                                 </ul>
                                             </div>
-                                            {/*// <!-- recent activites -->*/}
                                             <div className="widget stick-widget">
                                                 <h4 className="widget-title">Who's follownig</h4>
                                                 <ul className="followers">
@@ -332,7 +387,7 @@ const SeeProfile = () => {
                                                             </figure>
                                                             <div className="friend-name">
                                                                 <ins>
-                                                                    {p.loggedInUser.id == account.id ? <Link to={"/profile"}>{p.loggedInUser.firstName} {p.loggedInUser.lastName}</Link> : <Link to={`/${p.loggedInUser.id}`}>{p.loggedInUser.firstName} {p.loggedInUser.lastName}</Link>}
+                                                                    {p.loggedInUser.id == localStorage.getItem("idAccount") ? <Link to={"/profile"}>{p.loggedInUser.firstName} {p.loggedInUser.lastName}</Link> : <Link to={`/${p.loggedInUser.id}`}>{p.loggedInUser.firstName} {p.loggedInUser.lastName}</Link>}
                                                                 </ins>
                                                                 <span>{moment(p.time).format('MMMM Do YYYY, h:mm:ss a')}</span>
                                                                 <span id="status-name">

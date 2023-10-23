@@ -43,7 +43,13 @@ const EditProfile = () => {
     const setCheckEditPassWord = () => {
         setCheck(false)
     }
-
+    useEffect(() => {
+        if(check === false){
+            document.getElementById("oPassword").value = "";
+            document.getElementById("nPassword").value = "";
+            document.getElementById("confirm").value = "";
+        }
+    }, [check]);
     const setCheckEditInfor = () => {
         setCheck(true)
     }
@@ -55,6 +61,9 @@ const EditProfile = () => {
             localStorage.setItem("userToken", JSON.stringify(updatedUser));
             dispatch(updateUserToken(response.data));
             toast.success("Edited Password successfully !");
+            document.getElementById("oPassword").value = "";
+            document.getElementById("nPassword").value = "";
+            document.getElementById("confirm").value = "";
             setCheck(true)
         } catch (error) {
             console.error("Error:", error);
@@ -358,21 +367,21 @@ const EditProfile = () => {
                                                     >
                                                         <Form>
                                                             <div className="form-group">
-                                                                <Field type="password" name="oPassword" required="required" value={""}
+                                                                <Field type="password" name="oPassword" required="required" id={"oPassword"}
                                                                        onInput={changeInputEdit}/>
                                                                 <ErrorMessage name="oPassword" component="div" className="text-danger"/>
                                                                 <label className="control-label" htmlFor="input">Old
                                                                     password</label><i className="mtrl-select"></i>
                                                             </div>
                                                             <div className="form-group">
-                                                                <Field type="password" name="nPassword" required="required" value={""}
+                                                                <Field type="password" name="nPassword" required="required" id={"nPassword"}
                                                                        onInput={changeInputEdit}/>
                                                                 <ErrorMessage name="nPassword" component="div" className="text-danger"/>
                                                                 <label className="control-label" htmlFor="input">New
                                                                     password</label><i className="mtrl-select"></i>
                                                             </div>
                                                             <div className="form-group">
-                                                                <Field type="password" name="confirm" required="required" value={""}
+                                                                <Field type="password" name="confirm" required="required" id={"confirm"}
                                                                        onInput={changeInputEdit}/>
                                                                 <ErrorMessage name="confirm" component="div" className="text-danger"/>
                                                                 <label className="control-label" htmlFor="input">Confirm

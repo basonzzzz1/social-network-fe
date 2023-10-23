@@ -147,7 +147,7 @@ Answer 1
 Answer 2
 
 
-# Hi, I'm Nguyễn Bá Sơn , Nguyễn Văn Quang , Hà Anh tuấn Minh , Nguyễn Mạnh Hùng! 👋
+# Hi, I'm Nguyễn Bá Sơn , Nguyễn Văn Quang , Hà Anh tuấn Minh , Hà Mạnh Hùng! 👋
 
 
 ## 🔗 Links

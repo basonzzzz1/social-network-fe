@@ -6,15 +6,15 @@ import {toast} from "react-toastify";
 
 let stompClient = null;
 const ws = new WebSocket("ws://localhost:8080/ws/websocket");
-ws.onopen = function () {
-    var t = setInterval(function () {
-        if (ws.readyState != 1) {
-            clearInterval(t);
-            return;
-        }
-        ws.send('{type:"ping"}');
-    }, 2592000000000000);
-};
+// ws.onopen = function () {
+//     var t = setInterval(function () {
+//         if (ws.readyState != 1) {
+//             clearInterval(t);
+//             return;
+//         }
+//         ws.send('{type:"ping"}');
+//     }, 2592000000000000);
+// };
 const Header = () => {
     const [account, setAccount] = useState({});
     const [userSettingActive, setUserSettingActive] = useState(false);
@@ -49,6 +49,7 @@ const Header = () => {
     const findMessageByFriend = (id) => {
         Service.getMessageByFriend(id, account).then((response) => {
             setListMessageFriend(response)
+            scrollToBottom()
             setDropdown(false)
             console.log(response)
         }).catch((error) => {
@@ -56,6 +57,9 @@ const Header = () => {
             console.log(error);
             setLoad(false)
         })
+    }
+    const closeModalFriend = () => {
+      document.getElementById("closeModalButtonSearch").click()
     }
     const logout = () => {
         localStorage.removeItem("idAccount");
@@ -79,10 +83,6 @@ const Header = () => {
         });
 
     }, []);
-
-    // const loadMessage = () => {
-    //
-    // }
     const sendMessage = () => {
         const message = {
             messageCreateBindingModel: {
@@ -103,6 +103,7 @@ const Header = () => {
         }
         Service.sendMessage(account.id, data).then((response) => {
             document.getElementById("message-content-modal-create").value = "";
+            scrollToBottom()
         }).catch((error) => {
             toast.error("not send message error !")
             console.log(error);
@@ -114,6 +115,7 @@ const Header = () => {
     const findAccountMessage = (t) => {
         console.log(t);
         setAccountMessage(t)
+        scrollToBottom()
     }
     const handleSearch = (e) => {
         const search = e.target.value;
@@ -152,6 +154,12 @@ const Header = () => {
             setDropdown(false);
         }
     };
+    const scrollToBottom = ()=> {
+        var scrollableDiv = document.getElementById("chatting-area");
+        if(scrollableDiv) {
+            scrollableDiv.scrollTop = scrollableDiv.scrollHeight;
+        }
+    }
     if (localStorage.getItem("idAccount") == null) {
         return (
             <>
@@ -471,10 +479,10 @@ const Header = () => {
                                     id="img-profile" onClick={toggleUserSetting} alt=""/>
                             </div>
                             <div className={`user-setting ${userSettingActive ? 'active' : ''}`}>
-                                <Link to={"/profile"}><i className="ti-user"></i> view profile</Link>
-                                <Link to={"/editProfile"}><i className="ti-pencil-alt"></i>edit profile</Link>
-                                <a href="#" title=""><i className="ti-target"></i>activity log</a>
-                                <a href="#" title=""><i className="ti-settings"></i>account setting</a>
+                                <Link to={"/profile"} onClick={toggleUserSetting}><i className="ti-user"></i> view profile</Link>
+                                <Link to={"/editProfile"} onClick={toggleUserSetting}><i className="ti-pencil-alt"></i>edit profile</Link>
+                                <a href="#" title="" onClick={toggleUserSetting}><i className="ti-target"></i>activity log</a>
+                                <a href="#" title="" onClick={toggleUserSetting}><i className="ti-settings"></i>account setting</a>
                                 <Link to={"/login"} onClick={() => logout()}><i className="ti-power-off"></i>log
                                     out</Link>
                             </div>
@@ -576,7 +584,7 @@ const Header = () => {
                                     <button id="search-form-modal"><i className="ti-search"></i></button>
                                 </div>
                                 <button type="button" className="close" data-dismiss="modal"
-                                        id="closeModalButtonUpdate">&times;</button>
+                                        id="closeModalButtonSearch">&times;</button>
                             </div>
                             <div className="modal-body">
                                 <aside className="sidebar static" id="form-search-list-friend">
@@ -592,7 +600,7 @@ const Header = () => {
 
                                                 </figure>
                                                 <div className="friendz-meta">
-                                                    {f.id == account.id ? <Link to={"/profile"} >{f.firstName} {f.lastName}</Link> : <Link to={`/${f.id}`}  >{f.firstName} {f.lastName}</Link>}
+                                                    {f.id == account.id ? <Link to={"/profile"} onClick={()=>closeModalFriend()}>{f.firstName} {f.lastName}</Link> : <Link to={`/${f.id}`} onClick={()=>closeModalFriend()} >{f.firstName} {f.lastName}</Link>}
                                                     <i><a href={"#"}>{f.email}</a></i>
                                                 </div>
                                             </li>

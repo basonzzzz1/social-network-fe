@@ -2,13 +2,28 @@ import axios from "axios";
 import { toast } from 'react-toastify';
 import {
     ADD_COMMENT_API,
-    API_ADD_FRIEND_REQUEST, API_ALL_FRIEND_REQUEST,
-    API_SEARCH_NAME, COMMENT_DELETE_API, COMMENT_UPDATE_API, GET_ALL_COMMENT_API,
+    API_ADD_FRIEND_REQUEST, API_ALL_FRIEND,
+    API_ALL_FRIEND_REQUEST, API_ALL_FRIENDSHIP_SUGGESTIONS, API_DELETE_FRIEND_REQUEST,
+    API_SEARCH_NAME,
+    COMMENT_DELETE_API,
+    COMMENT_UPDATE_API,
+    FAVOURITE_ADD_API,
+    FAVOURITE_ALL_API, FAVOURITE_DELETE_API,
+    GET_ALL_COMMENT_API,
+    GET_ALL_FRIEND,
     LIKE_API,
-    LIKE_DELETE_API, LIST_MESSAGE_BY_FRIEND, LIST_MESSAGE_BY_TIME_ACCOUNT,
-    LOGIN_API,
-    POST_API, POST_DELETE_API, POST_FOLLOW_API, POST_STATUS_API, POST_UPDATE_API, POST_USE_API,
-    REGISTER_API, SEND_MESSAGE,
+    LIKE_DELETE_API,
+    LIST_MESSAGE_BY_FRIEND,
+    LIST_MESSAGE_BY_TIME_ACCOUNT,
+    LOGIN_API, LOGOUT_API,
+    POST_API,
+    POST_DELETE_API,
+    POST_FOLLOW_API,
+    POST_STATUS_API,
+    POST_UPDATE_API,
+    POST_USE_API,
+    REGISTER_API,
+    SEND_MESSAGE,
     USER_EDIT_PROFILE_API,
     USER_PROFILE_API
 } from "../api/api";
@@ -24,6 +39,22 @@ const Service = {
                 })
                 .catch(function (err) {
                     toast.error(err);
+                    reject(err)
+                });
+        });
+    },
+    logout: () => {
+        return new Promise((resolve, reject) => {
+            axios.get(LOGOUT_API+localStorage.getItem("idAccount"), {
+                headers: {
+                    'Accept': 'application/json',
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    resolve(response);
+                })
+                .catch(function (err) {
                     reject(err)
                 });
         });
@@ -266,6 +297,114 @@ const Service = {
                 });
         });
     },
+    findByAllFriendByAccount: (id) => {
+        return new Promise((resolve, reject) => {
+            axios.get(GET_ALL_FRIEND+id,{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+    deleteFavourite: (id) => {
+        return new Promise((resolve, reject) => {
+            axios.get(FAVOURITE_DELETE_API+id,{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    toast.success("delete favourite success !")
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+    deleteFriendRequest: (id) => {
+        return new Promise((resolve, reject) => {
+            axios.get(API_DELETE_FRIEND_REQUEST+id,{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    toast.success("delete Friend Request success !")
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+    getAllFriendshipSuggestions: () => {
+        return new Promise((resolve, reject) => {
+            axios.get(API_ALL_FRIENDSHIP_SUGGESTIONS+localStorage.getItem("idAccount"),{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+    findFavourite: () => {
+        return new Promise((resolve, reject) => {
+            axios.get(FAVOURITE_ALL_API+localStorage.getItem("idAccount"),{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+    allFriend: () => {
+        return new Promise((resolve, reject) => {
+            axios.get(API_ALL_FRIEND+localStorage.getItem("idAccount"),{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
+    addFavourite: (idFromUser , idToUser) => {
+        return new Promise((resolve, reject) => {
+            axios.get(FAVOURITE_ADD_API+idFromUser+"/"+idToUser,{
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('token'),
+                }
+            })
+                .then(response => {
+                    toast.success("Add Monitor success !")
+                    resolve(response.data);
+                })
+                .catch(function (err) {
+                    reject(err)
+                });
+        });
+    },
     searchName: (name) => {
         return new Promise((resolve, reject) => {
             axios.get(API_SEARCH_NAME+name,{
@@ -274,7 +413,6 @@ const Service = {
                 }
             })
                 .then(response => {
-                    toast.success("search successfly !");
                     resolve(response);
                 })
                 .catch(function (err) {
@@ -300,6 +438,7 @@ const Service = {
                 });
         });
     },
+
     allFriendRequest: () => {
         return new Promise((resolve, reject) => {
             axios.get(API_ALL_FRIEND_REQUEST+localStorage.getItem("idAccount"),{

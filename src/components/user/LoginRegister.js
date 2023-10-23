@@ -87,21 +87,6 @@ const LoginRegister = () => {
             toast.error("Username/Email Already Used !");
         }
     }
-
-    /*const checkLogin = (user) => {
-        LoginRegisterService.checkLogin(user)
-            .then((response) => {
-                if (response.data.includes("username")) {
-                    toast.error("Wrong Username")
-                }
-                if (response.data.includes("password")) {
-                    toast.error("Wrong Password")
-                }
-            })
-            .catch((error) => {
-                console.log(error)
-            })
-    }*/
     const checkLogin = async (user) => {
         try {
             const response = await LoginRegisterService.checkLogin(user);
